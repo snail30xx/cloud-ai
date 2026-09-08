@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: cloud-ai
+
+cloud-ai:
+  agent:
+    max-turns: 50
+  llm:
+    default-provider: openai
+    providers:
+      openai:
+        base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+        api-key: ${OPENAI_API_KEY:}
+        model: gpt-4o
+        timeout: 60s
+        max-context-tokens: 128000
+        capabilities:
+          - chat
+          - tool_calling
+      deepseek:
+        base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+        api-key: ${DEEPSEEK_API_KEY:}
+        model: deepseek-v4-pro
+        timeout: 120s
+        max-context-tokens: 128000
+        capabilities:
+          - chat
+          - tool_calling
+          - thinking
+  execution:
+    shell:
+      timeout: 30s
+    sandbox:
+      max-execution-time: 60s
+      max-memory: 512MB
+    filesystem:
+      workspace: ${CLOUD_AI_WORKSPACE:./workspace}
+  security:
+    approval:
+      mode: auto
+      timeout: 120s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
