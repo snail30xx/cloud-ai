@@ -2,6 +2,7 @@ package com.cloudai.llm.adapter;
 
 import com.cloudai.llm.ModelRouter;
 import com.cloudai.llm.client.ChatClientFactory;
+import com.cloudai.llm.config.ProviderProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -9,35 +10,38 @@ import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Anthropic Messages API 集成测试 — 通过 ChatClient 调用。
  *
  * <p>运行前需设置环境变量：</p>
  * <pre>
- *   VC_ANTHROPIC_BASE_URL=https://your-api-host/v1
- *   VC_ANTHROPIC_API_KEY=sk-xxx
+ *   ANTHROPIC_BASE_URL=https://your-api-host/v1
+ *   ANTHROPIC_API_KEY=sk-xxx
  * </pre>
  * <p>然后删除 {@code @Disabled} 运行。</p>
  */
-@Disabled("手动运行 — 需要设置 VC_ANTHROPIC_BASE_URL / VC_ANTHROPIC_API_KEY 环境变量")
-class VcreditAnthropicAdapterTest {
+@Disabled("手动运行 — 需要设置 ANTHROPIC_BASE_URL / ANTHROPIC_API_KEY 环境变量")
+class AnthropicAdapterTest {
 
     private static final String BASE_URL = System.getenv().getOrDefault(
-            "VC_ANTHROPIC_BASE_URL", "https://your-api-host/v1");
+            "ANTHROPIC_BASE_URL", "https://your-api-host/v1");
     private static final String API_KEY = System.getenv().getOrDefault(
-            "VC_ANTHROPIC_API_KEY", "sk-your-api-key");
+            "ANTHROPIC_API_KEY", "sk-your-api-key");
     private static final String MODEL = System.getenv().getOrDefault(
-            "VC_ANTHROPIC_MODEL", "deepseek-v4-pro");
+            "ANTHROPIC_MODEL", "deepseek-v4-pro");
 
     private ModelRouter router;
 
     @BeforeEach
     void setUp() {
-        var adapter = new VcreditAnthropicAdapter("vcredit", MODEL, BASE_URL, API_KEY,
-                100_000, Duration.ofSeconds(120));
-        router = new ModelRouter("vcredit");
-        router.register("vcredit", adapter);
+        var props = new ProviderProperties(
+                BASE_URL, API_KEY, MODEL,
+                Duration.ofSeconds(120), 100_000, null, List.of("chat"));
+        var adapter = new AnthropicLlmAdapter(props);
+        router = new ModelRouter("anthropic");
+        router.register("anthropic", adapter);
         router.validate();
     }
 
@@ -67,7 +71,5 @@ class VcreditAnthropicAdapterTest {
                 .recordWith(java.util.ArrayList::new)
                 .thenConsumeWhile(x -> true)
                 .verifyComplete();
-
-        // 流式内容已通过 recordWith 收集，此处不再打印
     }
 }

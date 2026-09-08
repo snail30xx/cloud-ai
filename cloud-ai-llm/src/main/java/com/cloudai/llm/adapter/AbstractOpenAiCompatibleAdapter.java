@@ -65,7 +65,7 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
     protected final RestClient restClient;
     protected final String provider;
     protected final String model;
-    private final ProviderProperties props;
+    protected final ProviderProperties props;
     private final ObservationRegistry observationRegistry;
     private final ObservationConvention<ChatModelObservationContext> observationConvention;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -86,17 +86,82 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
         this.observationRegistry = observationRegistry != null ? observationRegistry : ObservationRegistry.NOOP;
         this.observationConvention = convention != null ? convention : DefaultChatModelObservationConvention.INSTANCE;
 
+        this.restClient = buildRestClient(props);
+    }
+
+    /**
+     * 构建 RestClient，子类可覆盖 {@link #configureRestClient(RestClient.Builder)} 来自定义 header。
+     */
+    protected RestClient buildRestClient(ProviderProperties props) {
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(props.timeout());
         factory.setReadTimeout(props.timeout());
 
-        this.restClient = RestClient.builder()
+        var builder = RestClient.builder()
                 .baseUrl(props.baseUrl())
-                .defaultHeader("Authorization", "Bearer " + props.apiKey())
                 .defaultHeader("Content-Type", "application/json")
                 .requestFactory(factory)
-                .requestInterceptor(new LoggingClientHttpRequestInterceptor())
-                .build();
+                .requestInterceptor(new LoggingClientHttpRequestInterceptor());
+        configureRestClient(builder);
+        return builder.build();
+    }
+
+    /**
+     * 子类覆盖此方法添加自定义 header（如认证方式）。
+     * 默认添加 OpenAI 兼容的 {@code Authorization: Bearer} 头。
+     */
+    protected void configureRestClient(RestClient.Builder builder) {
+        builder.defaultHeader("Authorization", "Bearer " + props.apiKey());
+    }
+
+    // ==================== 模板方法（子类可覆盖以适配不同协议） ====================
+
+    /** 聊天补全端点路径，默认 {@code /chat/completions}（OpenAI 兼容协议） */
+    protected String getChatEndpoint() {
+        return "/chat/completions";
+    }
+
+    /** 聊天响应体类型，用于 JSON 反序列化 */
+    protected Class<?> getChatResponseType() {
+        return OpenAiChatResponse.class;
+    }
+
+    /** 构建请求体，默认委托给 {@link #buildRequestBody(ChatRequest)} */
+    protected Object buildRequestBodyInternal(ChatRequest request) {
+        return buildRequestBody(request);
+    }
+
+    /** 设置流式标志，返回修改后的请求体 */
+    protected Object setStreamFlag(Object body) {
+        if (body instanceof OpenAiChatRequest oai) {
+            return oai.withStream(true);
+        }
+        return body;
+    }
+
+    /** 预处理请求体（如展开 {@code extraBody}），在发送 HTTP 请求前调用 */
+    protected Object prepareRequestBody(Object body) {
+        if (body instanceof OpenAiChatRequest oai
+                && oai.extraBody() != null && !oai.extraBody().isEmpty()) {
+            Map<String, Object> bodyMap = OBJECT_MAPPER.convertValue(body,
+                    new TypeReference<Map<String, Object>>() {});
+            bodyMap.putAll(oai.extraBody());
+            bodyMap.remove("extraBody");
+            return bodyMap;
+        }
+        return body;
+    }
+
+    /** 解析原始 HTTP 响应为 {@link ChatResponse}，默认委托给 {@link #parseResponse(OpenAiChatResponse)} */
+    protected ChatResponse parseResponseInternal(Object rawResponse) {
+        return parseResponse((OpenAiChatResponse) rawResponse);
+    }
+
+    /** 解析单行 SSE 数据为 {@link ChatResponse}，返回 {@code null} 表示跳过该行 */
+    @Nullable
+    protected ChatResponse parseSseLineInternal(String data) throws Exception {
+        var chunk = OBJECT_MAPPER.readValue(data, OpenAiChatResponse.class);
+        return parseResponse(chunk);
     }
 
     // ==================== ModelDiscovery ====================
@@ -161,9 +226,9 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
 
     @Override
     public ChatResponse call(ChatRequest request) {
-        var body = buildRequestBody(request);
+        var body = buildRequestBodyInternal(request);
         log.debug("Chat request: provider={}, model={}, messages={}, tools={}",
-                provider, body.model(), request.messages().size(),
+                provider, model, request.messages().size(),
                 request.tools() != null ? request.tools().size() : 0);
 
         var ctx = new ChatModelObservationContext(provider, model, request, false);
@@ -175,7 +240,7 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
             try {
                 var response = RetryUtils.executeWithRetry(
                         () -> doChatInternal(body), props.maxRetries(), provider);
-                var chatResponse = parseResponse(response);
+                var chatResponse = parseResponseInternal(response);
                 ctx.setResponse(chatResponse);
                 return chatResponse;
             } catch (LlmAuthException | LlmRateLimitException | LlmServerException | LlmClientException e) {
@@ -189,18 +254,11 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
         });
     }
 
-    private OpenAiChatResponse doChatInternal(OpenAiChatRequest body) {
-        Object requestBody = body;
-        if (body.extraBody() != null && !body.extraBody().isEmpty()) {
-            Map<String, Object> bodyMap = OBJECT_MAPPER.convertValue(body,
-                    new TypeReference<Map<String, Object>>() {});
-            bodyMap.putAll(body.extraBody());
-            bodyMap.remove("extraBody");
-            requestBody = bodyMap;
-        }
+    protected Object doChatInternal(Object body) {
+        Object requestBody = prepareRequestBody(body);
 
         return restClient.post()
-                .uri("/chat/completions")
+                .uri(getChatEndpoint())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
@@ -224,14 +282,14 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
                             throw new LlmClientException(provider, resp.getStatusCode().value(),
                                     "LLM client error: " + resp.getStatusCode());
                         })
-                .body(OpenAiChatResponse.class);
+                .body(getChatResponseType());
     }
 
     // ==================== ChatModel: stream ====================
 
     @Override
     public Flux<ChatResponse> stream(ChatRequest request) {
-        var body = buildRequestBody(request).withStream(true);
+        var body = setStreamFlag(buildRequestBodyInternal(request));
 
         var ctx = new ChatModelObservationContext(provider, model, request, true);
         var observation = Observation.createNotStarted(
@@ -245,17 +303,10 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
                 observation::start,
                 scope -> Flux.defer(() -> Flux.<ChatResponse>create(sink -> {
                     try {
-                        Object requestBody = body;
-                        if (body.extraBody() != null && !body.extraBody().isEmpty()) {
-                            Map<String, Object> bodyMap = OBJECT_MAPPER.convertValue(body,
-                                    new TypeReference<Map<String, Object>>() {});
-                            bodyMap.putAll(body.extraBody());
-                            bodyMap.remove("extraBody");
-                            requestBody = bodyMap;
-                        }
+                        Object requestBody = prepareRequestBody(body);
 
                         restClient.post()
-                                .uri("/chat/completions")
+                                .uri(getChatEndpoint())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(requestBody)
                                 .exchange((req, resp) -> {
@@ -269,11 +320,12 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
                                                     break;
                                                 }
                                                 try {
-                                                    var chunk = OBJECT_MAPPER.readValue(data, OpenAiChatResponse.class);
-                                                    var chatChunk = parseResponse(chunk);
-                                                    ctx.setResponse(chatChunk);
-                                                    sink.next(chatChunk);
-                                                    chunkCount[0]++;
+                                                    var chatChunk = parseSseLineInternal(data);
+                                                    if (chatChunk != null) {
+                                                        ctx.setResponse(chatChunk);
+                                                        sink.next(chatChunk);
+                                                        chunkCount[0]++;
+                                                    }
                                                 } catch (Exception e) {
                                                     log.debug("Failed to parse SSE chunk: {}", data, e);
                                                 }
