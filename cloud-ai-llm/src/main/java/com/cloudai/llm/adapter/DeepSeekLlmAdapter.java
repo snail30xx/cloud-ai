@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
  * @author cloud-ai
  * @since 1.0
  */
-public class DeepSeekLlmAdapter extends AbstractOpenAiCompatibleAdapter {
+public class DeepSeekLlmAdapter extends AbstractLlmAdapter {
 
     private final boolean thinkingEnabled;
     private final String reasoningEffort;

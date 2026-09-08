@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  * @author cloud-ai
  * @since 1.0
  */
-public class OpenAiLlmAdapter extends AbstractOpenAiCompatibleAdapter {
+public class OpenAiLlmAdapter extends AbstractLlmAdapter {
 
     public OpenAiLlmAdapter(ProviderProperties props) {
         this(props, ObservationRegistry.NOOP, null);

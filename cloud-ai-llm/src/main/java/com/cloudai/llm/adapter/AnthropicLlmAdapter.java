@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Anthropic Messages API 适配器。
  *
- * <p>继承 {@link AbstractOpenAiCompatibleAdapter}，复用框架的观测、重试、异常映射、
+ * <p>继承 {@link AbstractLlmAdapter}，复用框架的观测、重试、异常映射、
  * HTTP 日志等基础设施，仅覆盖 Anthropic 协议特有的部分：</p>
  * <ul>
  *   <li>认证：{@code x-api-key} + {@code anthropic-version} 头</li>
@@ -34,7 +34,7 @@ import java.util.Map;
  * @author cloud-ai
  * @since 1.0
  */
-public class AnthropicLlmAdapter extends AbstractOpenAiCompatibleAdapter {
+public class AnthropicLlmAdapter extends AbstractLlmAdapter {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public AnthropicLlmAdapter(ProviderProperties props) {

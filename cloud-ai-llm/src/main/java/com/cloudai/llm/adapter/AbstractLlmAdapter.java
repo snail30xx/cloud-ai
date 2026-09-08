@@ -51,15 +51,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * OpenAI 兼容协议适配器基类。
+ * LLM 适配器抽象基类。
  *
  * <p>实现 {@link com.cloudai.core.spi.ChatModel}（运行时调用）和 {@link com.cloudai.core.spi.ModelDiscovery}（模型发现），
- * 封装 OpenAI 兼容 API 的通用逻辑：HTTP 调用、请求/响应映射、SSE 解析、异常映射。</p>
+ * 封装通用逻辑：HTTP 调用、请求/响应映射、SSE 解析、观测、重试、异常映射。</p>
+ *
+ * <p>子类通过覆盖模板方法适配不同 LLM 协议（OpenAI、DeepSeek、Anthropic 等）：</p>
+ * <ul>
+ *   <li>{@link #configureRestClient(RestClient.Builder)} — 认证 header</li>
+ *   <li>{@link #getChatEndpoint()} — API 端点路径</li>
+ *   <li>{@link #getChatResponseType()} — 响应体类型</li>
+ *   <li>{@link #buildRequestBodyInternal(ChatRequest)} — 请求体构建</li>
+ *   <li>{@link #parseResponseInternal(Object)} / {@link #parseSseLineInternal(String)} — 响应解析</li>
+ * </ul>
  *
  * @author cloud-ai
  * @since 1.0
  */
-public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, ModelDiscovery {
+public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     protected final RestClient restClient;
@@ -77,7 +86,7 @@ public abstract class AbstractOpenAiCompatibleAdapter implements ChatModel, Mode
     /**
      * @param providerName 提供商标识（如 "openai"、"deepseek"），用于异常信息和 ModelInfo
      */
-    protected AbstractOpenAiCompatibleAdapter(ProviderProperties props, String providerName,
+    protected AbstractLlmAdapter(ProviderProperties props, String providerName,
                                               @Nullable ObservationRegistry observationRegistry,
                                               @Nullable ObservationConvention<ChatModelObservationContext> convention) {
         this.provider = providerName;
