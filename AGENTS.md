@@ -69,7 +69,7 @@
 
 ## 本地 Skills
 
-`.claude/skills/` 中的 Skill 按需使用，不代表当前项目已经采用对应技术栈：
+`.agents/skills/` 中的 Skill 按需使用，不代表当前项目已经采用对应技术栈：
 
 | Skill | 使用时机 |
 |---|---|
