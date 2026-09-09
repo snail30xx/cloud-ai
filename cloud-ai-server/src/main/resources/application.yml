@@ -4,7 +4,10 @@ spring:
 
 cloud-ai:
   agent:
+    type: react
     max-turns: 50
+    timeout: 10m
+    max-plan-steps: 10
   llm:
     default-provider: openai
     providers:

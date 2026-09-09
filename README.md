@@ -19,6 +19,9 @@
 
 ```yaml
 cloud-ai:
+  agent:
+    max-turns: 50
+    timeout: 10m
   llm:
     default-provider: openai
     providers:
