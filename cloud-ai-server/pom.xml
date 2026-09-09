@@ -30,6 +30,14 @@
         </dependency>
         <dependency>
             <groupId>com.cloudai</groupId>
+            <artifactId>cloud-ai-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudai</groupId>
+            <artifactId>cloud-ai-skills</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudai</groupId>
             <artifactId>cloud-ai-runtime</artifactId>
         </dependency>
         <dependency>

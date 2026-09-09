@@ -45,7 +45,7 @@ class AgentServiceTest {
         toolRegistry = mock(ToolRegistry.class);
 
         service = new AgentService(agentLoop, personaProvider, personaAssembler,
-                memoryRetriever, memoryStore, toolRegistry);
+                memoryRetriever, memoryStore, toolRegistry, null, null);
 
         when(personaProvider.defaultPersona())
                 .thenReturn(Persona.of("default", "Assistant", "You are helpful."));
@@ -73,7 +73,7 @@ class AgentServiceTest {
 
             var captor = ArgumentCaptor.forClass(AgentRequest.class);
             verify(agentLoop).run(captor.capture());
-            assertEquals("You are helpful.", captor.getValue().systemPrompt());
+            assertTrue(captor.getValue().systemPrompt().startsWith("You are helpful."));
         }
 
         @Test

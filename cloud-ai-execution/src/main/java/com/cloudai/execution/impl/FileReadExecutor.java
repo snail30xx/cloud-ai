@@ -10,11 +10,15 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 文件读取执行器 — 读取指定路径的文件内容。
  *
  * <p>参数 JSON：{@code {"path": "/data/file.txt"}}</p>
+ *
+ * <p>若构造时指定了 {@code baseDir}，相对路径将相对于该目录解析，
+ * 绝对路径仍按原样使用。</p>
  *
  * @author cloud-ai
  * @since 1.0
@@ -23,6 +27,23 @@ public class FileReadExecutor implements ToolExecutor {
     private static final Logger log = LoggerFactory.getLogger(FileReadExecutor.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    @Nullable
+    private final Path baseDir;
+
+    /** 创建无工作目录限制的执行器（路径原样使用）。 */
+    public FileReadExecutor() {
+        this(null);
+    }
+
+    /**
+     * 创建带工作目录的执行器。
+     *
+     * @param baseDir 工作目录，null 表示不限制
+     */
+    public FileReadExecutor(@Nullable Path baseDir) {
+        this.baseDir = baseDir;
+    }
+
     @Override
     public ToolResult execute(ToolCall toolCall) {
         try {
@@ -30,7 +51,7 @@ public class FileReadExecutor implements ToolExecutor {
             if (path == null) {
                 return ToolResult.failure(toolCall.id(), "Missing 'path' parameter");
             }
-            var filePath = Path.of(path);
+            var filePath = resolvePath(path);
             if (!Files.exists(filePath)) {
                 return ToolResult.failure(toolCall.id(), "File not found: " + path);
             }
@@ -44,6 +65,14 @@ public class FileReadExecutor implements ToolExecutor {
             log.warn("File read failed: {}", e.getMessage());
             return ToolResult.failure(toolCall.id(), "Read failed: " + e.getMessage());
         }
+    }
+
+    private Path resolvePath(String path) {
+        var p = Path.of(path);
+        if (baseDir != null && !p.isAbsolute()) {
+            return baseDir.resolve(p).normalize();
+        }
+        return p;
     }
 
     private String extractPath(ToolCall toolCall) throws Exception {

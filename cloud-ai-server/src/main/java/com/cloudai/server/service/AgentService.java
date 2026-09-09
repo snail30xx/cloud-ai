@@ -1,32 +1,44 @@
 package com.cloudai.server.service;
 
+import com.cloudai.context.impl.DefaultEnvironmentProvider;
+import com.cloudai.context.impl.FilesystemProjectContextProvider;
+import com.cloudai.core.impl.DefaultPromptAssembler;
+import com.cloudai.core.spi.PromptAssembler;
+import com.cloudai.core.spi.PromptSection;
 import com.cloudai.execution.spi.ToolRegistry;
+import com.cloudai.memory.impl.MemoryPromptSection;
 import com.cloudai.memory.model.MemoryEntry;
 import com.cloudai.memory.model.MemoryQuery;
 import com.cloudai.memory.spi.MemoryRetriever;
 import com.cloudai.memory.spi.MemoryStore;
+import com.cloudai.persona.impl.PersonaPromptSection;
 import com.cloudai.persona.model.Persona;
 import com.cloudai.persona.spi.PersonaAssembler;
 import com.cloudai.persona.spi.PersonaProvider;
 import com.cloudai.runtime.model.AgentRequest;
 import com.cloudai.runtime.model.AgentResponse;
 import com.cloudai.runtime.spi.AgentLoop;
+import com.cloudai.skills.impl.SkillMenuPromptSection;
+import com.cloudai.skills.spi.SkillRegistry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Agent 服务 — 七层集成的编排入口。
+ * Agent 服务 — 通过 PromptSection 体系编排系统提示词。
  *
- * <p>将人格层、记忆层、运行时层串联：
+ * <p>各层提供自己的 PromptSection，由 PromptAssembler 按 order 排序拼接：
  * <ol>
- *   <li>从 {@link PersonaProvider} 解析人格，经 {@link PersonaAssembler} 组装 system prompt</li>
- *   <li>从 {@link MemoryRetriever} 检索相关记忆，追加到 system prompt</li>
- *   <li>构建 {@link AgentRequest}，调用 {@link AgentLoop#run} 执行</li>
- *   <li>执行完成后，将本次交互存入 {@link MemoryStore} 作为工作记忆</li>
+ *   <li>Persona (order=10)</li>
+ *   <li>Environment (order=30)</li>
+ *   <li>Project Context (order=40)</li>
+ *   <li>Skill Menu (order=50)</li>
+ *   <li>Relevant Memories (order=60)</li>
  * </ol>
  *
  * @author cloud-ai
@@ -44,85 +56,79 @@ public class AgentService {
     private final MemoryRetriever memoryRetriever;
     private final MemoryStore memoryStore;
     private final ToolRegistry toolRegistry;
+    private final SkillRegistry skillRegistry;
+    private final PromptAssembler promptAssembler;
+    private final java.nio.file.Path workDir;
 
     public AgentService(AgentLoop agentLoop,
                         PersonaProvider personaProvider,
                         PersonaAssembler personaAssembler,
                         MemoryRetriever memoryRetriever,
                         MemoryStore memoryStore,
-                        ToolRegistry toolRegistry) {
+                        ToolRegistry toolRegistry,
+                        SkillRegistry skillRegistry,
+                        java.nio.file.Path workDir) {
         this.agentLoop = agentLoop;
         this.personaProvider = personaProvider;
         this.personaAssembler = personaAssembler;
         this.memoryRetriever = memoryRetriever;
         this.memoryStore = memoryStore;
         this.toolRegistry = toolRegistry;
+        this.skillRegistry = skillRegistry;
+        this.workDir = workDir;
+        this.promptAssembler = new DefaultPromptAssembler();
     }
 
-    /**
-     * 运行 Agent 循环。
-     *
-     * @param prompt    用户输入
-     * @param provider  LLM provider，null 时用默认
-     * @param maxTurns  最大轮次，null 时用默认
-     * @param timeout   超时，null 时用默认
-     * @param traceId   追踪 ID，null 时自动生成
-     * @return Agent 执行结果
-     */
     public AgentResponse run(String prompt, String provider, Integer maxTurns,
-                             java.time.Duration timeout, String traceId) {
+                             Duration timeout, String traceId) {
         var systemPrompt = buildSystemPrompt(prompt);
-        log.info("Agent run: prompt='{}...', systemPrompt={} chars", truncate(prompt, 50), systemPrompt.length());
+        log.info("Agent run: prompt='{}...', systemPrompt={} chars",
+                truncate(prompt, 50), systemPrompt.length());
 
         var request = new AgentRequest(prompt, systemPrompt, provider, null, maxTurns, timeout, traceId, null);
         var response = agentLoop.run(request);
-
-        // 将本次交互存为工作记忆
         persistInteraction(traceId != null ? traceId : response.traceId(), prompt, response);
-
         return response;
     }
 
-    /**
-     * 检查指定会话是否正在运行。
-     */
     public boolean isRunning(String traceId) {
         return agentLoop.isRunning(traceId);
     }
 
-    /**
-     * 中断指定会话。
-     */
     public void interrupt(String traceId) {
         agentLoop.interrupt(traceId);
     }
 
     private String buildSystemPrompt(String userPrompt) {
-        // 1. 组装人格 system prompt
-        var persona = personaProvider.defaultPersona();
-        var tools = toolRegistry.listDefinitions();
-        var basePrompt = personaAssembler.assemble(persona, tools);
+        var sections = new ArrayList<PromptSection>();
 
-        // 2. 检索相关记忆
+        // [order=10] Persona
+        Persona persona = personaProvider.defaultPersona();
+        var tools = toolRegistry.listDefinitions();
+        sections.add(new PersonaPromptSection(persona, personaAssembler, tools));
+
+        // [order=30] Environment
+        var envProvider = new DefaultEnvironmentProvider(workDir);
+        sections.add(envProvider.buildSection());
+
+        // [order=40] Project Context
+        var projectProvider = new FilesystemProjectContextProvider(workDir);
+        sections.add(projectProvider.buildSection());
+
+        // [order=50] Skill Menu
+        if (skillRegistry != null) {
+            var skillMenu = new SkillMenuPromptSection(skillRegistry);
+            sections.add(skillMenu.build());
+        }
+
+        // [order=60] Relevant Memories
         var query = MemoryQuery.of(AGENT_ID, userPrompt);
         var memories = memoryRetriever.retrieve(query);
-
-        if (memories.isEmpty()) {
-            return basePrompt;
+        if (!memories.isEmpty()) {
+            sections.add(new MemoryPromptSection(memoryRetriever, AGENT_ID, userPrompt));
         }
 
-        // 3. 将记忆追加到 system prompt
-        var memoryBlock = formatMemories(memories);
-        return basePrompt + "\n\n" + memoryBlock;
-    }
-
-    private String formatMemories(List<MemoryEntry> memories) {
-        var sb = new StringBuilder("[Relevant Memories]\n");
-        for (var entry : memories) {
-            sb.append("- (").append(entry.type()).append(") ").append(entry.content()).append("\n");
-        }
-        sb.append("[/Relevant Memories]");
-        return sb.toString();
+        return promptAssembler.assemble(sections);
     }
 
     private void persistInteraction(String traceId, String prompt, AgentResponse response) {

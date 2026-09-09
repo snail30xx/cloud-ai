@@ -5,17 +5,21 @@ import com.cloudai.execution.model.ToolResult;
 import com.cloudai.execution.spi.ToolExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Shell 命令执行器 — 在系统 shell 中执行命令。
  *
  * <p>参数 JSON：{@code {"command": "ls -la /tmp"}}</p>
+ *
+ * <p>若构造时指定了 {@code baseDir}，命令将在该目录下执行。</p>
  *
  * @author cloud-ai
  * @since 1.0
@@ -24,6 +28,23 @@ public class ShellToolExecutor implements ToolExecutor {
     private static final Logger log = LoggerFactory.getLogger(ShellToolExecutor.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
+
+    @Nullable
+    private final Path baseDir;
+
+    /** 创建无工作目录限制的执行器。 */
+    public ShellToolExecutor() {
+        this(null);
+    }
+
+    /**
+     * 创建带工作目录的执行器。
+     *
+     * @param baseDir 工作目录，null 表示不限制
+     */
+    public ShellToolExecutor(@Nullable Path baseDir) {
+        this.baseDir = baseDir;
+    }
 
     @Override
     public ToolResult execute(ToolCall toolCall) {
@@ -38,6 +59,9 @@ public class ShellToolExecutor implements ToolExecutor {
             var processBuilder = new ProcessBuilder(
                     isWindows ? new String[]{"cmd", "/c", command} : new String[]{"sh", "-c", command});
             processBuilder.redirectErrorStream(true);
+            if (baseDir != null) {
+                processBuilder.directory(baseDir.toFile());
+            }
             var process = processBuilder.start();
 
             var output = new StringBuilder();

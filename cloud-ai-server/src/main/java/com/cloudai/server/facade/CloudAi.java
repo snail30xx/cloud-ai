@@ -1,7 +1,14 @@
 package com.cloudai.server.facade;
 
+import com.cloudai.context.impl.DefaultEnvironmentProvider;
+import com.cloudai.context.impl.FilesystemProjectContextProvider;
+import com.cloudai.context.impl.PromptSectionImpl;
+import com.cloudai.context.spi.ContextProvider;
+import com.cloudai.core.impl.DefaultPromptAssembler;
 import com.cloudai.core.model.ToolDefinition;
 import com.cloudai.core.spi.ChatModel;
+import com.cloudai.core.spi.PromptAssembler;
+import com.cloudai.core.spi.PromptSection;
 import com.cloudai.execution.impl.DefaultToolRegistry;
 import com.cloudai.execution.impl.ToolExecutionService;
 import com.cloudai.execution.spi.ToolExecutor;
@@ -12,13 +19,14 @@ import com.cloudai.llm.adapter.OpenAiLlmAdapter;
 import com.cloudai.llm.config.ProviderProperties;
 import com.cloudai.memory.impl.InMemoryMemoryStore;
 import com.cloudai.memory.impl.KeywordMemoryRetriever;
+import com.cloudai.memory.impl.MemoryPromptSection;
 import com.cloudai.memory.model.MemoryEntry;
-import com.cloudai.memory.model.MemoryQuery;
 import com.cloudai.memory.model.MemoryType;
 import com.cloudai.memory.spi.MemoryRetriever;
 import com.cloudai.memory.spi.MemoryStore;
 import com.cloudai.persona.impl.DefaultPersonaAssembler;
 import com.cloudai.persona.impl.DefaultPersonaProvider;
+import com.cloudai.persona.impl.PersonaPromptSection;
 import com.cloudai.persona.model.Persona;
 import com.cloudai.persona.spi.PersonaAssembler;
 import com.cloudai.runtime.AgentLoopFactory;
@@ -34,47 +42,34 @@ import com.cloudai.security.model.OperationType;
 import com.cloudai.security.spi.ApprovalGateway;
 import com.cloudai.security.spi.AuditLogger;
 import com.cloudai.security.spi.PermissionManager;
+import com.cloudai.skills.impl.LoadSkillExecutor;
+import com.cloudai.skills.impl.SkillMenuPromptSection;
+import com.cloudai.skills.spi.SkillRegistry;
+import com.cloudai.skills.spi.SkillLoader;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Cloud AI 门面 — 七层 Agent 框架的统一入口。
+ * Cloud AI 门面 — 九层 Agent 框架的统一入口。
  *
- * <p>封装了 LLM 适配、记忆、人格、安全、工具执行和 Agent 运行时的全部串联逻辑。
- * 用户只需提供 LLM 配置和（可选的）工具/人格配置即可运行 Agent。</p>
+ * <p>封装了 LLM 适配、记忆、人格、上下文、技能、安全、工具执行和 Agent 运行时的全部串联逻辑。
+ * 用户只需提供 LLM 配置和（可选的）工具/人格/工作目录配置即可运行 Agent。</p>
  *
- * <h3>接入 OpenAI</h3>
- * <pre>{@code
- * CloudAi agent = CloudAi.builder()
- *     .openai("https://api.openai.com/v1", System.getenv("OPENAI_API_KEY"), "gpt-4o")
- *     .tool("calculator", "Evaluate arithmetic", new MyCalculator())
- *     .build();
- *
- * AgentResponse response = agent.run("calculate 25 * 4");
- * }</pre>
- *
- * <h3>接入 DeepSeek</h3>
- * <pre>{@code
- * CloudAi agent = CloudAi.builder()
- *     .deepseek("https://api.deepseek.com", System.getenv("DEEPSEEK_API_KEY"), "deepseek-v4-pro")
- *     .build();
- *
- * AgentResponse response = agent.run("你好");
- * }</pre>
- *
- * <h3>自定义 LLM</h3>
- * <pre>{@code
- * CloudAi agent = CloudAi.builder()
- *     .model(new MyChatModel())
- *     .provider("custom")
- *     .build();
- * }</pre>
+ * <p>系统提示词由多个 {@link PromptSection} 按 order 排序拼接：</p>
+ * <ul>
+ *   <li>order=10: Persona（静态）</li>
+ *   <li>order=30: Environment（动态）</li>
+ *   <li>order=40: Project Context — AGENTS.md/CLAUDE.md（动态）</li>
+ *   <li>order=50: Skill Menu（动态）</li>
+ *   <li>order=60: Relevant Memories（动态）</li>
+ * </ul>
  *
  * @author cloud-ai
  * @since 1.0
@@ -85,90 +80,60 @@ public final class CloudAi {
     private static final String DEFAULT_AGENT_ID = "cloud-ai-agent";
 
     private final AgentLoop agentLoop;
-    private final Persona persona;
-    private final PersonaAssembler personaAssembler;
-    private final MemoryRetriever memoryRetriever;
+    private final PromptAssembler promptAssembler;
+    private final List<PromptSectionProvider> sectionProviders;
     private final MemoryStore memoryStore;
     private final ToolRegistry toolRegistry;
+    private final MemoryRetriever memoryRetriever;
 
-    private CloudAi(AgentLoop agentLoop, Persona persona, PersonaAssembler personaAssembler,
+    private CloudAi(AgentLoop agentLoop, PromptAssembler promptAssembler,
+                    List<PromptSectionProvider> sectionProviders,
                     MemoryRetriever memoryRetriever, MemoryStore memoryStore,
                     ToolRegistry toolRegistry) {
         this.agentLoop = agentLoop;
-        this.persona = persona;
-        this.personaAssembler = personaAssembler;
+        this.promptAssembler = promptAssembler;
+        this.sectionProviders = List.copyOf(sectionProviders);
         this.memoryRetriever = memoryRetriever;
         this.memoryStore = memoryStore;
         this.toolRegistry = toolRegistry;
     }
 
-    /**
-     * 运行 Agent 循环（同步阻塞直到终止）。
-     *
-     * @param prompt 用户输入
-     * @return Agent 执行结果
-     */
     public AgentResponse run(String prompt) {
         return run(prompt, null, null, null, null);
     }
 
-    /**
-     * 运行 Agent 循环（带可选参数）。
-     *
-     * @param prompt    用户输入
-     * @param provider  LLM provider，null 用默认
-     * @param maxTurns  最大轮次，null 用默认
-     * @param timeout   超时，null 用默认
-     * @param traceId   追踪 ID，null 自动生成
-     */
     public AgentResponse run(String prompt, @Nullable String provider, @Nullable Integer maxTurns,
                              @Nullable Duration timeout, @Nullable String traceId) {
         var systemPrompt = buildSystemPrompt(prompt);
-
         var request = new AgentRequest(prompt, systemPrompt, provider, null,
                 maxTurns, timeout, traceId, null);
         var response = agentLoop.run(request);
-
         persistInteraction(traceId != null ? traceId : response.traceId(), prompt, response);
         return response;
     }
 
-    /** 中断运行中的会话。 */
     public void interrupt(String traceId) {
         agentLoop.interrupt(traceId);
     }
 
-    /** 查询会话是否正在运行。 */
     public boolean isRunning(String traceId) {
         return agentLoop.isRunning(traceId);
     }
 
-    /** 获取记忆存储（用于外部读写记忆）。 */
     public MemoryStore memoryStore() {
         return memoryStore;
     }
 
-    /** 获取工具注册表（用于运行时动态注册工具）。 */
     public ToolRegistry toolRegistry() {
         return toolRegistry;
     }
 
     private String buildSystemPrompt(String userPrompt) {
-        var tools = toolRegistry.listDefinitions();
-        var base = personaAssembler.assemble(persona, tools);
-
-        var memories = memoryRetriever.retrieve(
-                MemoryQuery.of(DEFAULT_AGENT_ID, userPrompt));
-        if (memories.isEmpty()) {
-            return base;
+        var sections = new ArrayList<PromptSection>();
+        for (var provider : sectionProviders) {
+            sections.add(provider.build(userPrompt));
         }
-
-        var sb = new StringBuilder(base).append("\n\n[Relevant Memories]\n");
-        for (var m : memories) {
-            sb.append("- (").append(m.type()).append(") ").append(m.content()).append("\n");
-        }
-        sb.append("[/Relevant Memories]");
-        return sb.toString();
+        return promptAssembler.assemble(sections);
     }
 
     private void persistInteraction(String traceId, String prompt, AgentResponse response) {
@@ -180,30 +145,20 @@ public final class CloudAi {
         }
     }
 
-    // ==================== Builder ====================
+    @FunctionalInterface
+    public interface PromptSectionProvider {
+        PromptSection build(String userPrompt);
+    }
 
-    /**
-     * 创建 Builder。
-     *
-     * @return 新的 Builder 实例
-     */
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * Cloud Ai 门面 Builder — 链式配置，默认串联七层。
-     *
-     * <p>必填：调用 {@code .openai(...)}、{@code .deepseek(...)} 或 {@code .model(...)} 之一指定 LLM。
-     * 其余全部可选，有合理默认值。</p>
-     */
     public static final class Builder {
 
-        // LLM 配置（三选一）
         private ChatModel model;
         private String providerName = "default";
 
-        // 可选配置
         private final List<ToolRegistration> tools = new ArrayList<>();
         private Persona persona = null;
         private MemoryStore memoryStore = null;
@@ -211,22 +166,14 @@ public final class CloudAi {
         private Duration timeout = Duration.ofMinutes(10);
         private AgentType agentType = AgentType.REACT;
 
+        @Nullable private Path workDir = null;
+        private final List<PromptSectionProvider> sectionProviders = new ArrayList<>();
+
         private Builder() {
         }
 
         // ==================== LLM 配置 ====================
 
-        /**
-         * 接入 OpenAI（或任何 OpenAI 兼容 API）。
-         *
-         * <pre>{@code
-         * .openai("https://api.openai.com/v1", "sk-xxx", "gpt-4o")
-         * }</pre>
-         *
-         * @param baseUrl API 地址
-         * @param apiKey API 密钥
-         * @param model  模型名
-         */
         public Builder openai(String baseUrl, String apiKey, String model) {
             var props = new ProviderProperties(baseUrl, apiKey, model, null, null, null, null);
             this.model = new OpenAiLlmAdapter(props);
@@ -234,17 +181,6 @@ public final class CloudAi {
             return this;
         }
 
-        /**
-         * 接入 DeepSeek（支持 thinking 能力）。
-         *
-         * <pre>{@code
-         * .deepseek("https://api.deepseek.com", "sk-xxx", "deepseek-v4-pro")
-         * }</pre>
-         *
-         * @param baseUrl API 地址
-         * @param apiKey API 密钥
-         * @param model  模型名
-         */
         public Builder deepseek(String baseUrl, String apiKey, String model) {
             var props = new ProviderProperties(baseUrl, apiKey, model, null, null, null,
                     List.of("chat", "tool_calling", "thinking"));
@@ -253,98 +189,80 @@ public final class CloudAi {
             return this;
         }
 
-        /**
-         * 自定义 LLM 实现（如 Stub、Mock 或其他适配器）。
-         *
-         * @param model         ChatModel 实例
-         * @param providerName  provider 名称
-         */
         public Builder model(ChatModel model, String providerName) {
             this.model = model;
             this.providerName = providerName;
             return this;
         }
 
-        /**
-         * 自定义 LLM 实现（provider 名默认为 "default"）。
-         */
         public Builder model(ChatModel model) {
             return model(model, "default");
         }
 
         // ==================== 可选配置 ====================
 
-        /**
-         * 注册工具。
-         */
         public Builder tool(String name, String description, ToolExecutor executor) {
             this.tools.add(new ToolRegistration(name, description, executor));
             return this;
         }
 
-        /**
-         * 设置人格（默认使用内置 Assistant 人格）。
-         */
         public Builder persona(String name, String systemPrompt) {
             this.persona = new Persona(name, name, null, systemPrompt,
                     List.of(), null, List.of());
             return this;
         }
 
-        /**
-         * 设置完整人格定义。
-         */
         public Builder persona(Persona persona) {
             this.persona = persona;
             return this;
         }
 
-        /**
-         * 设置记忆存储（默认 InMemoryMemoryStore）。
-         */
         public Builder memoryStore(MemoryStore store) {
             this.memoryStore = store;
             return this;
         }
 
-        /**
-         * 预存一条语义记忆。
-         */
         public Builder memory(String content, MemoryType type, double importance) {
             ensureMemoryStore();
             memoryStore.save(MemoryEntry.of(DEFAULT_AGENT_ID, content, type));
             return this;
         }
 
-        /**
-         * 设置最大轮次（默认 50）。
-         */
         public Builder maxTurns(int maxTurns) {
             this.maxTurns = maxTurns;
             return this;
         }
 
-        /**
-         * 设置超时（默认 10 分钟）。
-         */
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
         }
 
-        /**
-         * 设置 Agent 类型（默认 REACT）。
-         */
         public Builder agentType(AgentType type) {
             this.agentType = type;
             return this;
         }
 
-        // ==================== 构建 ====================
+        /**
+         * 设置工作目录 — 用于环境信息、AGENTS.md/CLAUDE.md 读取和技能扫描。
+         *
+         * @param workDir 工作目录路径
+         */
+        public Builder workDir(Path workDir) {
+            this.workDir = workDir;
+            return this;
+        }
 
         /**
-         * 构建 Cloud Ai 门面实例，自动串联七层。
+         * 注册自定义 PromptSection 提供者。
          */
+        public Builder promptSection(PromptSectionProvider provider) {
+            this.sectionProviders.add(provider);
+            return this;
+        }
+
+        // ==================== 构建 ====================
+
         public CloudAi build() {
             if (model == null) {
                 throw new IllegalStateException(
@@ -367,7 +285,7 @@ public final class CloudAi {
             }
             var assembler = new DefaultPersonaAssembler();
 
-            // 4. 安全层 — 默认允许全部操作 + 自动审批
+            // 4. 安全层
             var permissionManager = new DefaultPermissionManager();
             for (var op : OperationType.values()) {
                 permissionManager.allow(op, "*");
@@ -384,6 +302,22 @@ public final class CloudAi {
                         new ToolDefinition(t.name, t.description, Map.of("type", "object")),
                         t.executor);
             }
+
+            // 5b. 技能层 — 扫描工作目录下的 skills
+            var effectiveWorkDir = workDir != null ? workDir : Path.of(".");
+            SkillRegistry skillRegistry = null;
+            try {
+                var fsr = new com.cloudai.skills.impl.FilesystemSkillRegistry(effectiveWorkDir);
+                if (!fsr.list().isEmpty()) {
+                    skillRegistry = fsr;
+                    var loadExecutor = new LoadSkillExecutor(fsr);
+                    toolRegistry.register(LoadSkillExecutor.definition(), loadExecutor);
+                    log.info("Skills registered: {}", fsr.list().size());
+                }
+            } catch (Exception e) {
+                log.warn("Skill scanning failed: {}", e.getMessage());
+            }
+
             var toolExecService = new ToolExecutionService(toolRegistry, securityInterceptor);
 
             // 6. 运行时层
@@ -393,13 +327,44 @@ public final class CloudAi {
                     .timeout(timeout)
                     .build();
 
-            log.info("CloudAi initialized: provider='{}', model={}, tools={}, persona='{}', memory={}",
+            // 7. 组装 PromptSection 提供者（按 order 排序由 PromptAssembler 处理）
+            var providers = new ArrayList<PromptSectionProvider>();
+
+            // [order=10] Persona
+            providers.add(userPrompt -> new PersonaPromptSection(persona, assembler, toolRegistry.listDefinitions()));
+
+            // [order=30] Environment
+            var envProvider = new DefaultEnvironmentProvider(workDir);
+            providers.add(userPrompt -> envProvider.buildSection());
+
+            // [order=40] Project Context (AGENTS.md / CLAUDE.md)
+            var projectProvider = new FilesystemProjectContextProvider(workDir);
+            providers.add(userPrompt -> projectProvider.buildSection());
+
+            // [order=50] Skill Menu
+            if (skillRegistry != null) {
+                var skillMenu = new SkillMenuPromptSection(skillRegistry);
+                providers.add(userPrompt -> skillMenu.build());
+            }
+
+            // [order=60] Relevant Memories
+            providers.add(userPrompt -> new MemoryPromptSection(retriever, DEFAULT_AGENT_ID, userPrompt));
+
+            // 用户自定义段落
+            providers.addAll(sectionProviders);
+
+            var promptAssembler = new DefaultPromptAssembler();
+
+            log.info("CloudAi initialized: provider='{}', model={}, tools={}, persona='{}', workDir={}, skills={}, sections={}",
                     providerName,
                     model.getClass().getSimpleName(),
-                    tools.size(), persona.name(),
-                    memoryStore.getClass().getSimpleName());
+                    toolRegistry.size(),
+                    persona.name(),
+                    effectiveWorkDir,
+                    skillRegistry != null ? skillRegistry.list().size() : 0,
+                    providers.size());
 
-            return new CloudAi(agentLoop, persona, assembler, retriever, memoryStore, toolRegistry);
+            return new CloudAi(agentLoop, promptAssembler, providers, retriever, memoryStore, toolRegistry);
         }
 
         private void ensureMemoryStore() {

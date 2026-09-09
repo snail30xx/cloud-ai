@@ -17,6 +17,8 @@
         <module>cloud-ai-llm</module>
         <module>cloud-ai-memory</module>
         <module>cloud-ai-persona</module>
+        <module>cloud-ai-context</module>
+        <module>cloud-ai-skills</module>
         <module>cloud-ai-security</module>
         <module>cloud-ai-execution</module>
         <module>cloud-ai-runtime</module>
@@ -74,6 +76,16 @@
             <dependency>
                 <groupId>com.cloudai</groupId>
                 <artifactId>cloud-ai-persona</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cloudai</groupId>
+                <artifactId>cloud-ai-context</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cloudai</groupId>
+                <artifactId>cloud-ai-skills</artifactId>
                 <version>${project.version}</version>
             </dependency>
                                     <dependency>
