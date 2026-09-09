@@ -15,10 +15,13 @@
     <modules>
         <module>cloud-ai-core</module>
         <module>cloud-ai-llm</module>
+        <module>cloud-ai-memory</module>
+        <module>cloud-ai-persona</module>
         <module>cloud-ai-security</module>
         <module>cloud-ai-execution</module>
         <module>cloud-ai-runtime</module>
         <module>cloud-ai-server</module>
+        <module>cloud-ai-example</module>
     </modules>
 
     <properties>
@@ -65,6 +68,16 @@
             </dependency>
             <dependency>
                 <groupId>com.cloudai</groupId>
+                <artifactId>cloud-ai-memory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cloudai</groupId>
+                <artifactId>cloud-ai-persona</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+                                    <dependency>
+                <groupId>com.cloudai</groupId>
                 <artifactId>cloud-ai-security</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -80,6 +93,11 @@
             </dependency>
 
             <dependency>
+                <groupId>com.cloudai</groupId>
+                <artifactId>cloud-ai-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+                        <dependency>
                 <groupId>org.springframework.retry</groupId>
                 <artifactId>spring-retry</artifactId>
                 <version>2.0.7</version>
@@ -128,3 +146,6 @@
         </pluginManagement>
     </build>
 </project>
+
+
+

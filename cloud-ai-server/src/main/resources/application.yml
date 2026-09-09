@@ -14,7 +14,7 @@ cloud-ai:
       openai:
         base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
         api-key: ${OPENAI_API_KEY:}
-        model: gpt-4o
+        model: ${OPENAI_MODEL:gpt-4o}
         timeout: 60s
         max-context-tokens: 128000
         capabilities:
@@ -23,13 +23,31 @@ cloud-ai:
       deepseek:
         base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
         api-key: ${DEEPSEEK_API_KEY:}
-        model: deepseek-v4-pro
+        model: ${DEEPSEEK_MODEL:deepseek-v4-pro}
         timeout: 120s
         max-context-tokens: 128000
         capabilities:
           - chat
           - tool_calling
           - thinking
+  persona:
+    default-persona-id: default
+    personas:
+      default:
+        name: Cloud AI Assistant
+        role: AI assistant
+        system-prompt: You are a helpful AI assistant. You assist users with tasks by using available tools when needed.
+        guidelines:
+          - Always be accurate and honest
+          - Ask for clarification when the request is ambiguous
+        tone-style: professional and concise
+        constraints:
+          - Never share sensitive data or credentials
+          - Do not execute destructive operations without confirmation
+  memory:
+    max-context-tokens: 8000
+    max-retrieval-results: 5
+    default-agent-id: cloud-ai-agent
   execution:
     shell:
       timeout: 30s

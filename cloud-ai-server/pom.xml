@@ -22,6 +22,14 @@
         </dependency>
         <dependency>
             <groupId>com.cloudai</groupId>
+            <artifactId>cloud-ai-memory</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudai</groupId>
+            <artifactId>cloud-ai-persona</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudai</groupId>
             <artifactId>cloud-ai-runtime</artifactId>
         </dependency>
         <dependency>
@@ -44,6 +52,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -55,3 +68,5 @@
         </plugins>
     </build>
 </project>
+
+

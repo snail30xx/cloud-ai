@@ -49,6 +49,11 @@ public class ReActAgentLoop extends AgentLoopTemplate
 
     private final ModelRouter modelRouter;
     private final ToolRegistry toolRegistry;
+
+    /** 工具注册表（供 AgentLoopTemplate 日志使用）。 */
+    public ToolRegistry toolRegistry() {
+        return toolRegistry;
+    }
     private final ToolExecutionService toolExecutionService;
     private final int defaultMaxTurns;
     private final Duration defaultTimeout;

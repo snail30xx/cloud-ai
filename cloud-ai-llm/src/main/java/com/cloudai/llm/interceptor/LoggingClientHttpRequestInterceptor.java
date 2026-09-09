@@ -1,18 +1,24 @@
 package com.cloudai.llm.interceptor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
- * RestClient 日志拦截器 — 记录每次 HTTP 请求的方法、URI、状态码和耗时。
+ * RestClient 日志拦截器 — 记录每次 HTTP 请求和响应的完整 JSON。
  *
- * <p>INFO 级别输出请求/响应摘要，DEBUG 级别额外输出请求体大小。</p>
+ * <p>INFO 级别输出请求/响应的完整 JSON body。</p>
  *
  * @author cloud-ai
  * @since 1.0
@@ -20,25 +26,75 @@ import java.io.IOException;
 public class LoggingClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingClientHttpRequestInterceptor.class);
+    private static final ObjectMapper PRETTY = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
             throws IOException {
-        long start = System.currentTimeMillis();
+        String reqBody = body != null && body.length > 0 ? new String(body, StandardCharsets.UTF_8) : "(empty)";
+        log.info("[HTTP Request] {} {}\n{}", request.getMethod(), request.getURI(), prettyJson(reqBody));
 
-        if (log.isDebugEnabled()) {
-            log.debug("HTTP {} {} (body={} bytes)", request.getMethod(), request.getURI(),
-                    body != null ? body.length : 0);
-        } else {
-            log.info("HTTP {} {}", request.getMethod(), request.getURI());
+        long start = System.currentTimeMillis();
+        ClientHttpResponse response = execution.execute(request, body);
+        long elapsed = System.currentTimeMillis() - start;
+
+        byte[] respBytes = response.getBody().readAllBytes();
+        String respBody = respBytes.length > 0 ? new String(respBytes, StandardCharsets.UTF_8) : "(empty)";
+
+        log.info("[HTTP Response] {} -> {} ({}ms)\n{}",
+                request.getURI(), response.getStatusCode(), elapsed, prettyJson(respBody));
+
+        return new BufferedClientHttpResponse(response, respBytes);
+    }
+
+    private static String prettyJson(String json) {
+        if (json == null || json.isBlank() || json.startsWith("(")) {
+            return json;
+        }
+        try {
+            Object parsed = PRETTY.readValue(json, Object.class);
+            return PRETTY.writeValueAsString(parsed);
+        } catch (Exception e) {
+            return json;
+        }
+    }
+
+    /**
+     * 包装 ClientHttpResponse，使 getBody() 可重复读取。
+     */
+    private static class BufferedClientHttpResponse implements ClientHttpResponse {
+        private final ClientHttpResponse delegate;
+        private final byte[] body;
+
+        BufferedClientHttpResponse(ClientHttpResponse delegate, byte[] body) {
+            this.delegate = delegate;
+            this.body = body;
         }
 
-        ClientHttpResponse response = execution.execute(request, body);
+        @Override
+        public InputStream getBody() {
+            return new ByteArrayInputStream(body);
+        }
 
-        long elapsed = System.currentTimeMillis() - start;
-        log.info("HTTP {} {} -> {} ({}ms)",
-                request.getMethod(), request.getURI(), response.getStatusCode(), elapsed);
+        @Override
+        public HttpHeaders getHeaders() {
+            return delegate.getHeaders();
+        }
 
-        return response;
+        @Override
+        public org.springframework.http.HttpStatusCode getStatusCode() throws IOException {
+            return delegate.getStatusCode();
+        }
+
+        @Override
+        public String getStatusText() throws IOException {
+            return delegate.getStatusText();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
     }
 }
