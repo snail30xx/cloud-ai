@@ -13,7 +13,7 @@
     <artifactId>cloud-ai-execution</artifactId>
     <packaging>jar</packaging>
     <name>Cloud AI Execution</name>
-    <description>执行能力层：FileSystem、Shell、Sandbox</description>
+    <description>执行能力层：ToolExecutor、ToolRegistry、FileSystem、Shell</description>
 
     <dependencies>
         <dependency>
@@ -25,8 +25,17 @@
             <artifactId>cloud-ai-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
