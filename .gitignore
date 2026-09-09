@@ -36,3 +36,6 @@ build/
 ### Environment ###
 .env
 application-local.yml
+
+# temp logs
+skill_demo.log
