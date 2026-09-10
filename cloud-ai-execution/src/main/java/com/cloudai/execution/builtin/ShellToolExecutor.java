@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,19 +32,33 @@ public class ShellToolExecutor implements ToolExecutor {
 
     @Nullable
     private final Path baseDir;
+    private final Duration timeout;
 
-    /** 创建无工作目录限制的执行器。 */
+    /** 创建无工作目录限制、默认 30s 超时的执行器。 */
     public ShellToolExecutor() {
-        this(null);
+        this(null, null);
     }
 
     /**
-     * 创建带工作目录的执行器。
+     * 创建带工作目录、默认 30s 超时的执行器。
      *
      * @param baseDir 工作目录，null 表示不限制
      */
     public ShellToolExecutor(@Nullable Path baseDir) {
+        this(baseDir, null);
+    }
+
+    /**
+     * 创建带工作目录和超时的执行器。
+     *
+     * @param baseDir 工作目录，null 表示不限制
+     * @param timeout 单条命令超时，null 或非正值使用默认 30s
+     */
+    public ShellToolExecutor(@Nullable Path baseDir, @Nullable Duration timeout) {
         this.baseDir = baseDir;
+        this.timeout = (timeout == null || timeout.isNegative() || timeout.isZero())
+                ? Duration.ofMillis(DEFAULT_TIMEOUT_MS)
+                : timeout;
     }
 
     @Override
@@ -64,22 +79,37 @@ public class ShellToolExecutor implements ToolExecutor {
             }
             var process = processBuilder.start();
 
+            // 输出必须在后台线程读取：主线程负责超时判定，若同步读会阻塞到进程输出结束，超时失效
             var output = new StringBuilder();
-            try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
+            var readerThread = new Thread(() -> {
+                try (var reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        synchronized (output) {
+                            output.append(line).append("\n");
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // 进程被超时终止时流关闭抛异常，属预期路径
                 }
-            }
+            }, "shell-tool-output-" + toolCall.id());
+            readerThread.setDaemon(true);
+            readerThread.start();
 
-            var finished = process.waitFor(DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            var finished = process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                return ToolResult.failure(toolCall.id(), "Command timed out after 30s");
+                readerThread.join(1000);
+                return ToolResult.failure(toolCall.id(),
+                        "Command timed out after " + timeout.toSeconds() + "s");
             }
+            readerThread.join(2000);
 
             var exitCode = process.exitValue();
-            var result = output.toString().trim();
+            String result;
+            synchronized (output) {
+                result = output.toString().trim();
+            }
             if (exitCode != 0) {
                 log.warn("Shell command failed: exit={}, command={}", exitCode, command);
                 return ToolResult.failure(toolCall.id(),

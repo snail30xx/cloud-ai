@@ -1,6 +1,4 @@
-package com.cloudai.memory;
-
-import com.cloudai.core.chat.Message;
+package com.cloudai.core.chat;
 
 import java.util.List;
 
@@ -9,6 +7,13 @@ import java.util.List;
  *
  * <p>当对话历史超出 token 上限时，对旧消息进行压缩
  * （截断或摘要），确保 LLM 调用不会超长。</p>
+ *
+ * <p>作为共享词汇定义在 core：实现方（如 memory 模块的
+ * {@code SimpleContextManager}）与消费方（runtime 模块的
+ * Agent 循环在每次调用 LLM 前裁剪请求视图）跨模块协作，
+ * 会话原始历史不受影响。</p>
+ *
+ * <p>实现必须线程安全或仅在单线程（循环线程）中使用。</p>
  *
  * @author cloud-ai
  * @since 1.0

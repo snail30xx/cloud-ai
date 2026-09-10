@@ -1,7 +1,7 @@
 package com.cloudai.memory;
 
 import com.cloudai.core.chat.Message;
-import com.cloudai.memory.ContextManager;
+import com.cloudai.core.chat.ContextManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

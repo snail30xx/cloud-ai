@@ -110,6 +110,35 @@ class InMemoryApprovalGatewayTest {
     }
 
     @Nested
+    @DisplayName("approval mode")
+    class ApprovalModeBehavior {
+
+        @Test
+        @DisplayName("MANUAL 模式下 LOW 风险也等待人工审批")
+        void manualModeLowRiskWaits() {
+            var manualGateway = new InMemoryApprovalGateway(
+                    Duration.ofSeconds(30), ApprovalMode.MANUAL);
+
+            var response = manualGateway.requestApproval(
+                    new ApprovalRequest("FILE_READ", RiskLevel.LOW, null, Duration.ofMillis(100), null));
+
+            assertFalse(response.approved());
+            assertTrue(response.reason().toLowerCase().contains("timeout"));
+        }
+
+        @Test
+        @DisplayName("AUTO 模式下 LOW 风险自动放行（默认行为不变）")
+        void autoModeLowRiskAutoApproves() {
+            var autoGateway = new InMemoryApprovalGateway(
+                    Duration.ofSeconds(30), ApprovalMode.AUTO);
+
+            var response = autoGateway.requestApproval(ApprovalRequest.lowRisk("FILE_READ"));
+
+            assertTrue(response.approved());
+        }
+    }
+
+    @Nested
     @DisplayName("approve/deny by ID")
     class ApproveDeny {
         @Test

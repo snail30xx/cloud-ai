@@ -1,12 +1,14 @@
 package com.cloudai.security.config;
 
 import com.cloudai.security.permission.DefaultPermissionManager;
+import com.cloudai.security.approval.ApprovalMode;
 import com.cloudai.security.approval.InMemoryApprovalGateway;
 import com.cloudai.security.SecurityInterceptor;
 import com.cloudai.security.audit.Slf4jAuditLogger;
 import com.cloudai.security.approval.ApprovalGateway;
 import com.cloudai.security.audit.AuditLogger;
 import com.cloudai.security.permission.PermissionManager;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +37,21 @@ public final class SecurityAutoConfiguration {
     }
 
     public static ApprovalGateway approvalGateway(SecurityProperties properties) {
-        log.info("Creating InMemoryApprovalGateway with default timeout: {}", properties.approval().timeout());
-        return new InMemoryApprovalGateway(properties.approval().timeout());
+        var mode = parseApprovalMode(properties.approval().mode());
+        log.info("Creating InMemoryApprovalGateway: mode={}, default timeout={}",
+                mode, properties.approval().timeout());
+        return new InMemoryApprovalGateway(properties.approval().timeout(), mode);
+    }
+
+    /** 解析审批模式字符串，非法值 fail fast。 */
+    private static ApprovalMode parseApprovalMode(@Nullable String mode) {
+        var normalized = mode != null ? mode.trim().toUpperCase(java.util.Locale.ROOT) : "AUTO";
+        return switch (normalized) {
+            case "AUTO" -> ApprovalMode.AUTO;
+            case "MANUAL" -> ApprovalMode.MANUAL;
+            default -> throw new IllegalStateException(
+                    "Invalid cloud-ai.security.approval.mode '" + mode + "', valid values: auto, manual");
+        };
     }
 
     public static AuditLogger auditLogger() {

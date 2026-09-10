@@ -1,7 +1,7 @@
 package com.cloudai.spring.config;
 
+import com.cloudai.core.chat.ContextManager;
 import com.cloudai.memory.config.MemoryProperties;
-import com.cloudai.memory.ContextManager;
 import com.cloudai.memory.MemoryRetriever;
 import com.cloudai.memory.MemoryStore;
 import com.cloudai.spring.properties.CloudAiProperties;

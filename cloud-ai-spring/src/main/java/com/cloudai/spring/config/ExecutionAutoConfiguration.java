@@ -16,10 +16,13 @@ public class ExecutionAutoConfiguration {
     @ConditionalOnMissingBean
     public ToolRegistry toolRegistry(CloudAiProperties props) {
         var exec = props.execution() != null ? props.execution() : new CloudAiProperties.Execution();
-        return com.cloudai.execution.config.ExecutionAutoConfiguration.toolRegistry(
+        var executionProps = new com.cloudai.execution.config.ExecutionProperties(
                 exec.fileReadEnabled(),
                 exec.fileWriteEnabled(),
-                exec.shellEnabled());
+                exec.shellEnabled(),
+                exec.shellTimeout(),
+                exec.workspace());
+        return com.cloudai.execution.config.ExecutionAutoConfiguration.toolRegistry(executionProps);
     }
 
     @Bean

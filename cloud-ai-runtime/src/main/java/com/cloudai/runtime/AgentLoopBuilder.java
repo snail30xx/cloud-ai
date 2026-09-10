@@ -1,5 +1,6 @@
 package com.cloudai.runtime;
 
+import com.cloudai.core.chat.ContextManager;
 import com.cloudai.execution.ToolExecutionService;
 import com.cloudai.execution.registry.ToolRegistry;
 import com.cloudai.llm.ModelRouter;
@@ -8,6 +9,7 @@ import com.cloudai.runtime.loop.ReActAgentLoop;
 import com.cloudai.runtime.AgentType;
 import com.cloudai.runtime.AgentLoop;
 import com.cloudai.runtime.StopCondition;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +45,9 @@ public final class AgentLoopBuilder {
     private Duration timeout = Duration.ofMinutes(10);
     private List<StopCondition> stopConditions = List.of();
     private int maxPlanSteps = 10;
+    @Nullable
+    private ContextManager contextManager;
+    private int maxContextTokens = ReActAgentLoop.DEFAULT_MAX_CONTEXT_TOKENS;
 
     AgentLoopBuilder(ModelRouter modelRouter,
                      ToolRegistry toolRegistry,
@@ -103,15 +108,37 @@ public final class AgentLoopBuilder {
         return this;
     }
 
+    /**
+     * 设置上下文管理器 — 非 null 时每次调用 LLM 前把历史裁剪到 token 预算内，
+     * 会话原始历史不受影响（默认 null 不裁剪）。
+     */
+    public AgentLoopBuilder contextManager(@Nullable ContextManager contextManager) {
+        this.contextManager = contextManager;
+        return this;
+    }
+
+    /** 设置单次 LLM 调用允许的历史 token 预算（默认 8000，仅在配置了 contextManager 时生效）。 */
+    public AgentLoopBuilder maxContextTokens(int maxContextTokens) {
+        if (maxContextTokens <= 0) {
+            throw new IllegalArgumentException("maxContextTokens must be positive");
+        }
+        this.maxContextTokens = maxContextTokens;
+        return this;
+    }
+
     /** 构建 AgentLoop 实例。 */
     public AgentLoop build() {
-        log.info("Creating AgentLoop: type={}, maxTurns={}, timeout={}, stopConditions={}, maxPlanSteps={}",
-                type, maxTurns, timeout, stopConditions.size(), maxPlanSteps);
+        log.info("Creating AgentLoop: type={}, maxTurns={}, timeout={}, stopConditions={}, maxPlanSteps={}, "
+                        + "contextManager={}, maxContextTokens={}",
+                type, maxTurns, timeout, stopConditions.size(), maxPlanSteps,
+                contextManager != null ? contextManager.getClass().getSimpleName() : "off",
+                contextManager != null ? maxContextTokens : "n/a");
         return switch (type) {
             case REACT -> new ReActAgentLoop(modelRouter, toolRegistry, toolExecutionService,
-                    maxTurns, timeout, stopConditions);
+                    maxTurns, timeout, stopConditions, contextManager, maxContextTokens);
             case PLAN_THEN_EXECUTE -> new PlanThenExecuteAgentLoop(modelRouter, toolRegistry,
-                    toolExecutionService, maxTurns, timeout, stopConditions, maxPlanSteps);
+                    toolExecutionService, maxTurns, timeout, stopConditions, maxPlanSteps,
+                    contextManager, maxContextTokens);
         };
     }
 }

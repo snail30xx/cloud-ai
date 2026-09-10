@@ -28,6 +28,22 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!--
+                覆盖父 POM 锁定的 logback 1.5.12（对齐 spring-boot-dependencies 4.1.0 管理的 1.5.34）：
+                Boot 4.1 的 LoggingApplicationListener 依赖 1.5.14+ 的 LoggerContext.initCollisionMaps()，
+                否则本模块的 Spring 上下文测试在日志初始化阶段即抛 NoSuchMethodError。
+                仅提升 patch 版本，1.5.x 内二进制兼容。
+            -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.34</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.5.34</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

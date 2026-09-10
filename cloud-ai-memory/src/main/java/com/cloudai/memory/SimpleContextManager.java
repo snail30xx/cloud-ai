@@ -1,7 +1,7 @@
 package com.cloudai.memory;
 
+import com.cloudai.core.chat.ContextManager;
 import com.cloudai.core.chat.Message;
-import com.cloudai.memory.ContextManager;
 
 import java.util.ArrayList;
 import java.util.List;

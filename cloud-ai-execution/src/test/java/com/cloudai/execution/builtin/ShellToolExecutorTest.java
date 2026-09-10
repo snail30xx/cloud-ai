@@ -55,4 +55,23 @@ class ShellToolExecutorTest {
             assertFalse(result.success());
         }
     }
+
+    @Nested
+    @DisplayName("configurable timeout")
+    class Timeout {
+        @Test
+        @DisplayName("超时可配置 — 长命令在配置的超时后被终止")
+        void configurableTimeoutKillsLongCommand() {
+            var isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            // Windows ping -n 10 约 9s；Unix sleep 5s；配置 300ms 超时应触发终止
+            var command = isWindows ? "ping -n 10 127.0.0.1" : "sleep 5";
+            var executor = new ShellToolExecutor(null, java.time.Duration.ofMillis(300));
+
+            var result = executor.execute(
+                    new ToolCall("call_1", "shell_exec", "{\"command\":\"" + command + "\"}"));
+
+            assertFalse(result.success());
+            assertTrue(result.error().toLowerCase().contains("timed out"));
+        }
+    }
 }

@@ -2,6 +2,8 @@ package com.cloudai.spring.properties;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -15,6 +17,10 @@ import java.util.Map;
  * 在 {@link com.cloudai.spring.config.CloudAiAutoConfiguration} 的各子配置类中
  * 转换为框架纯 Java Properties record 后调用各模块工厂方法。</p>
  *
+ * <p><b>绑定约束</b>：同时提供 no-arg 便捷构造器的 record 必须在规范构造器上标注
+ * {@link ConstructorBinding}，否则 Spring Boot 在多构造器间无法选择，整个组件绑定结果为
+ * null（缺省值全部丢失）。</p>
+ *
  * @author cloud-ai
  * @since 1.0
  */
@@ -26,7 +32,7 @@ public record CloudAiProperties(
         @Nullable Memory memory,
         @Nullable Persona persona,
         @Nullable Context context,
-        @Nullable Skill skill,
+        @Nullable Skill skills,
         @Nullable Runtime runtime,
         @Nullable Server server) {
 
@@ -48,7 +54,7 @@ public record CloudAiProperties(
     public record Security(
             @Nullable Approval approval,
             @Nullable Permission permission) {
-        public record Approval(@Nullable Duration timeout) {}
+        public record Approval(@Nullable Duration timeout, @Nullable String mode) {}
         public record Permission(@Nullable List<Rule> rules) {
             public record Rule(
                     @Nullable String operation,
@@ -59,20 +65,27 @@ public record CloudAiProperties(
 
     /** 执行配置 — cloud-ai.execution 命名空间。 */
     public record Execution(
-            boolean fileReadEnabled,
-            boolean fileWriteEnabled,
-            boolean fileDeleteEnabled,
-            boolean shellEnabled) {
+            @DefaultValue("true") boolean fileReadEnabled,
+            @DefaultValue("true") boolean fileWriteEnabled,
+            @DefaultValue("true") boolean shellEnabled,
+            @Nullable Duration shellTimeout,
+            @Nullable Path workspace) {
+        @ConstructorBinding
+        public Execution {}
+
         public Execution() {
-            this(true, true, true, true);
+            this(true, true, true, null, null);
         }
     }
 
     /** 记忆配置 — cloud-ai.memory 命名空间。 */
     public record Memory(
-            int maxContextTokens,
-            int maxRetrievalResults,
+            @DefaultValue("8000") int maxContextTokens,
+            @DefaultValue("5") int maxRetrievalResults,
             @Nullable String defaultAgentId) {
+        @ConstructorBinding
+        public Memory {}
+
         public Memory() {
             this(8000, 5, "cloud-ai-agent");
         }
@@ -94,16 +107,22 @@ public record CloudAiProperties(
     /** 上下文配置 — cloud-ai.context 命名空间。 */
     public record Context(
             @Nullable Path workDir,
-            boolean projectContextEnabled) {
+            @DefaultValue("true") boolean projectContextEnabled) {
+        @ConstructorBinding
+        public Context {}
+
         public Context() {
             this(Path.of("."), true);
         }
     }
 
-    /** 技能配置 — cloud-ai.skills 命名空间。 */
+    /** 技能配置 — cloud-ai.skills 命名空间（组件名 skills，与 enabled 开关键一致）。 */
     public record Skill(
             @Nullable Path workDir,
-            boolean enabled) {
+            @DefaultValue("true") boolean enabled) {
+        @ConstructorBinding
+        public Skill {}
+
         public Skill() {
             this(Path.of("."), true);
         }
@@ -111,10 +130,13 @@ public record CloudAiProperties(
 
     /** 运行时配置 — cloud-ai.agent 命名空间。 */
     public record Runtime(
-            int maxTurns,
+            @DefaultValue("50") int maxTurns,
             @Nullable Duration timeout,
             @Nullable String type,
-            int maxPlanSteps) {
+            @DefaultValue("10") int maxPlanSteps) {
+        @ConstructorBinding
+        public Runtime {}
+
         public Runtime() {
             this(50, Duration.ofMinutes(10), "REACT", 10);
         }

@@ -15,7 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 内存审批网关 — 低风险自动放行，中高风险等待审批。
+ * 内存审批网关 — 按 {@link ApprovalMode} 决定自动放行范围，其余等待审批。
  *
  * <p>提供 {@link #approve(String, String)} / {@link #deny(String, String)} 方法供外部审批。</p>
  * <p>使用 {@link #listPending()} 获取当前待审批请求及其 ID。</p>
@@ -29,16 +29,23 @@ public class InMemoryApprovalGateway implements ApprovalGateway {
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
     private final Duration defaultTimeout;
+    private final ApprovalMode mode;
     private final Map<String, PendingApproval> pending = new ConcurrentHashMap<>();
 
-    /** 使用默认超时（30s）创建。 */
+    /** 使用默认超时（30s）与 AUTO 模式创建。 */
     public InMemoryApprovalGateway() {
         this(DEFAULT_TIMEOUT);
     }
 
-    /** 指定默认超时创建。 */
+    /** 指定默认超时、AUTO 模式创建。 */
     public InMemoryApprovalGateway(Duration defaultTimeout) {
+        this(defaultTimeout, ApprovalMode.AUTO);
+    }
+
+    /** 指定默认超时与审批模式创建。 */
+    public InMemoryApprovalGateway(Duration defaultTimeout, ApprovalMode mode) {
         this.defaultTimeout = defaultTimeout != null ? defaultTimeout : DEFAULT_TIMEOUT;
+        this.mode = mode != null ? mode : ApprovalMode.AUTO;
     }
 
     /** 返回当前待审批请求及其 ID，供外部审批系统发现。 */
@@ -50,8 +57,8 @@ public class InMemoryApprovalGateway implements ApprovalGateway {
 
     @Override
     public ApprovalResponse requestApproval(ApprovalRequest request) {
-        // 低风险自动放行
-        if (request.risk() == RiskLevel.LOW) {
+        // AUTO 模式下低风险自动放行
+        if (mode == ApprovalMode.AUTO && request.risk() == RiskLevel.LOW) {
             log.debug("Auto-approved low-risk operation: {}", request.operation());
             return ApprovalResponse.approved("Auto-approved: low risk operation");
         }

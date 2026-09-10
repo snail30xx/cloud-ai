@@ -15,7 +15,7 @@ public record SecurityProperties(Approval approval, Permission permission) {
 
     public SecurityProperties {
         if (approval == null) {
-            approval = new Approval(Duration.ofSeconds(30));
+            approval = new Approval(Duration.ofSeconds(30), null);
         }
         if (permission == null) {
             permission = new Permission(List.of());
@@ -23,14 +23,22 @@ public record SecurityProperties(Approval approval, Permission permission) {
     }
 
     public SecurityProperties() {
-        this(new Approval(Duration.ofSeconds(30)), new Permission(List.of()));
+        this(new Approval(Duration.ofSeconds(30), null), new Permission(List.of()));
     }
 
-    /** 审批配置。 */
-    public record Approval(Duration timeout) {
+    /**
+     * 审批配置。
+     *
+     * @param timeout 审批等待超时
+     * @param mode    审批模式（auto / manual，见 {@link com.cloudai.security.approval.ApprovalMode}）
+     */
+    public record Approval(Duration timeout, String mode) {
         public Approval {
             if (timeout == null) {
                 timeout = Duration.ofSeconds(30);
+            }
+            if (mode == null || mode.isBlank()) {
+                mode = "auto";
             }
         }
     }

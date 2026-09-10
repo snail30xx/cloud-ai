@@ -62,6 +62,37 @@ class FileWriteExecutorTest {
     }
 
     @Nested
+    @DisplayName("workspace resolution")
+    class WorkspaceResolution {
+        @Test
+        @DisplayName("相对路径以 baseDir 为基准写入")
+        void relativePathResolvedAgainstBaseDir(@TempDir Path tempDir) throws Exception {
+            var executor = new FileWriteExecutor(tempDir);
+
+            var result = executor.execute(
+                    new ToolCall("call_1", "file_write", "{\"path\":\"sub/output.txt\",\"content\":\"hi\"}"));
+
+            assertTrue(result.success());
+            assertEquals("hi", Files.readString(tempDir.resolve("sub/output.txt")));
+        }
+
+        @Test
+        @DisplayName("绝对路径不受 baseDir 影响")
+        void absolutePathUnaffected(@TempDir Path tempDir) throws Exception {
+            var executor = new FileWriteExecutor(tempDir);
+            var absolute = tempDir.resolve("absolute.txt");
+
+            var result = executor.execute(
+                    new ToolCall("call_1", "file_write",
+                            "{\"path\":\"" + absolute.toString().replace('\\', '/')
+                                    + "\",\"content\":\"abs\"}"));
+
+            assertTrue(result.success());
+            assertEquals("abs", Files.readString(absolute));
+        }
+    }
+
+    @Nested
     @DisplayName("failure cases")
     class FailureCases {
         @Test

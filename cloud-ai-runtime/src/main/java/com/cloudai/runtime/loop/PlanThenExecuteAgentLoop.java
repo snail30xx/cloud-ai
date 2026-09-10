@@ -1,6 +1,7 @@
 package com.cloudai.runtime.loop;
 
 import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.ContextManager;
 import com.cloudai.core.chat.Message;
 import com.cloudai.core.tool.ToolCall;
 import com.cloudai.execution.ToolExecutionService;
@@ -10,6 +11,7 @@ import com.cloudai.runtime.AgentRequest;
 import com.cloudai.runtime.AgentSession;
 import com.cloudai.runtime.StopCondition;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,8 +74,28 @@ public class PlanThenExecuteAgentLoop extends ReActAgentLoop {
                                     Duration defaultTimeout,
                                     List<StopCondition> stopConditions,
                                     int maxPlanSteps) {
+        this(modelRouter, toolRegistry, toolExecutionService,
+                defaultMaxTurns, defaultTimeout, stopConditions, maxPlanSteps,
+                null, ReActAgentLoop.DEFAULT_MAX_CONTEXT_TOKENS);
+    }
+
+    /**
+     * 带上下文压缩的构造器。
+     *
+     * @param contextManager   上下文管理器，null 表示不裁剪历史
+     * @param maxContextTokens 单次 LLM 调用允许的历史 token 预算，仅在 contextManager 非 null 时生效
+     */
+    public PlanThenExecuteAgentLoop(ModelRouter modelRouter,
+                                    ToolRegistry toolRegistry,
+                                    ToolExecutionService toolExecutionService,
+                                    int defaultMaxTurns,
+                                    Duration defaultTimeout,
+                                    List<StopCondition> stopConditions,
+                                    int maxPlanSteps,
+                                    @Nullable ContextManager contextManager,
+                                    int maxContextTokens) {
         super(modelRouter, toolRegistry, toolExecutionService,
-                defaultMaxTurns, defaultTimeout, stopConditions);
+                defaultMaxTurns, defaultTimeout, stopConditions, contextManager, maxContextTokens);
         if (maxPlanSteps <= 0) {
             throw new IllegalArgumentException("maxPlanSteps must be positive");
         }

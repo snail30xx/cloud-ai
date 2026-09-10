@@ -28,6 +28,8 @@ public class SecurityAutoConfiguration {
         var sec = props.security() != null ? props.security() : new CloudAiProperties.Security(null, null);
         var approvalTimeout = sec.approval() != null && sec.approval().timeout() != null
                 ? sec.approval().timeout() : Duration.ofSeconds(30);
+        var approvalMode = sec.approval() != null && sec.approval().mode() != null
+                ? sec.approval().mode() : "auto";
 
         List<com.cloudai.security.config.SecurityProperties.Permission.Rule> rules = new ArrayList<>();
         if (sec.permission() != null && sec.permission().rules() != null) {
@@ -38,7 +40,7 @@ public class SecurityAutoConfiguration {
             }
         }
         return new com.cloudai.security.config.SecurityProperties(
-                new com.cloudai.security.config.SecurityProperties.Approval(approvalTimeout),
+                new com.cloudai.security.config.SecurityProperties.Approval(approvalTimeout, approvalMode),
                 new com.cloudai.security.config.SecurityProperties.Permission(List.copyOf(rules)));
     }
 

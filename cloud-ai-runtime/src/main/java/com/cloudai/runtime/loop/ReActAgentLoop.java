@@ -2,6 +2,7 @@ package com.cloudai.runtime.loop;
 
 import com.cloudai.core.chat.ChatRequest;
 import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.ContextManager;
 import com.cloudai.core.chat.Message;
 import com.cloudai.core.tool.ToolCall;
 import com.cloudai.core.tool.ToolDefinition;
@@ -16,6 +17,7 @@ import com.cloudai.runtime.lifecycle.SessionLifecycle;
 import com.cloudai.runtime.StopCondition;
 import com.cloudai.runtime.lifecycle.StepLifecycle;
 import com.cloudai.runtime.lifecycle.TurnLifecycle;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +50,9 @@ public class ReActAgentLoop extends AgentLoopTemplate
     private static final Logger log = LoggerFactory.getLogger(ReActAgentLoop.class);
     private static final String AGENT_ID = "cloud-ai-agent";
 
+    /** 未显式指定时的历史 token 预算默认值（与 memory 模块默认一致）。 */
+    public static final int DEFAULT_MAX_CONTEXT_TOKENS = 8000;
+
     private final ModelRouter modelRouter;
     private final ToolRegistry toolRegistry;
 
@@ -59,6 +64,11 @@ public class ReActAgentLoop extends AgentLoopTemplate
     private final int defaultMaxTurns;
     private final Duration defaultTimeout;
     private final List<StopCondition> stopConditions;
+
+    /** 可选的上下文管理器，非 null 时每次调用 LLM 前裁剪请求视图（会话原始历史不受影响）。 */
+    @Nullable
+    private final ContextManager contextManager;
+    private final int maxContextTokens;
 
     private final ConcurrentHashMap<String, AgentSession> runningSessions = new ConcurrentHashMap<>();
 
@@ -76,6 +86,24 @@ public class ReActAgentLoop extends AgentLoopTemplate
                           int defaultMaxTurns,
                           Duration defaultTimeout,
                           List<StopCondition> stopConditions) {
+        this(modelRouter, toolRegistry, toolExecutionService,
+                defaultMaxTurns, defaultTimeout, stopConditions, null, DEFAULT_MAX_CONTEXT_TOKENS);
+    }
+
+    /**
+     * 带上下文压缩的构造器。
+     *
+     * @param contextManager   上下文管理器，null 表示不裁剪历史
+     * @param maxContextTokens 单次 LLM 调用允许的历史 token 预算，仅在 contextManager 非 null 时生效
+     */
+    public ReActAgentLoop(ModelRouter modelRouter,
+                          ToolRegistry toolRegistry,
+                          ToolExecutionService toolExecutionService,
+                          int defaultMaxTurns,
+                          Duration defaultTimeout,
+                          List<StopCondition> stopConditions,
+                          @Nullable ContextManager contextManager,
+                          int maxContextTokens) {
         if (modelRouter == null) {
             throw new IllegalArgumentException("modelRouter must not be null");
         }
@@ -91,12 +119,17 @@ public class ReActAgentLoop extends AgentLoopTemplate
         if (defaultTimeout == null || defaultTimeout.isNegative() || defaultTimeout.isZero()) {
             throw new IllegalArgumentException("defaultTimeout must be positive");
         }
+        if (maxContextTokens <= 0) {
+            throw new IllegalArgumentException("maxContextTokens must be positive");
+        }
         this.modelRouter = modelRouter;
         this.toolRegistry = toolRegistry;
         this.toolExecutionService = toolExecutionService;
         this.defaultMaxTurns = defaultMaxTurns;
         this.defaultTimeout = defaultTimeout;
         this.stopConditions = stopConditions != null ? List.copyOf(stopConditions) : List.of();
+        this.contextManager = contextManager;
+        this.maxContextTokens = maxContextTokens;
     }
 
     // ==================== 策略注入 ====================
@@ -186,13 +219,18 @@ public class ReActAgentLoop extends AgentLoopTemplate
     @Override
     public ChatResponse callModel(AgentSession session, AgentRequest request) {
         var tools = toolRegistry.listDefinitions();
-        var chatRequest = new ChatRequest(session.history(), tools, request.options());
+        var history = contextManager != null
+                ? contextManager.compress(session.history(), maxContextTokens)
+                : session.history();
+        var chatRequest = new ChatRequest(history, tools, request.options());
 
         if (request.provider() != null && !request.provider().isBlank()) {
-            log.debug("Calling LLM: provider={}, tools={}", request.provider(), tools.size());
+            log.debug("Calling LLM: provider={}, tools={}, history={}/{}",
+                    request.provider(), tools.size(), history.size(), session.history().size());
             return modelRouter.chat(request.provider(), chatRequest);
         }
-        log.debug("Calling LLM: default provider, tools={}", tools.size());
+        log.debug("Calling LLM: default provider, tools={}, history={}/{}",
+                tools.size(), history.size(), session.history().size());
         return modelRouter.chatDefault(chatRequest);
     }
 

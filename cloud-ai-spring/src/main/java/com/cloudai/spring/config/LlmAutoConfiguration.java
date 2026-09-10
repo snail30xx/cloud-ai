@@ -7,6 +7,7 @@ import com.cloudai.spring.properties.CloudAiProperties;
 import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +23,7 @@ public class LlmAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ModelRouter modelRouter(CloudAiProperties props,
-                                   ObservationRegistry observationRegistry) {
+                                   ObjectProvider<ObservationRegistry> observationRegistryProvider) {
         var springLlm = props.llm() != null ? props.llm() : new CloudAiProperties.Llm(null, null);
         var providers = new HashMap<String, ProviderProperties>();
         if (springLlm.providers() != null) {
@@ -34,8 +35,11 @@ public class LlmAutoConfiguration {
             }
         }
         var llmProps = new LlmProperties(springLlm.defaultProvider(), providers);
-        log.info("Spring wiring LLM: defaultProvider='{}', providers={}",
-                springLlm.defaultProvider(), providers.keySet());
+        // ObservationRegistry 可选（未引入 actuator 时回退 NOOP）
+        var observationRegistry = observationRegistryProvider.getIfAvailable();
+        log.info("Spring wiring LLM: defaultProvider='{}', providers={}, observation={}",
+                springLlm.defaultProvider(), providers.keySet(),
+                observationRegistry != null ? "enabled" : "noop");
         return com.cloudai.llm.config.LlmAutoConfiguration.modelRouter(llmProps, observationRegistry, null);
     }
 }
