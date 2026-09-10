@@ -24,6 +24,7 @@
         <module>cloud-ai-runtime</module>
         <module>cloud-ai-server</module>
         <module>cloud-ai-example</module>
+        <module>cloud-ai-spring</module>
     </modules>
 
     <properties>
@@ -40,6 +41,7 @@
         <reactor.version>3.7.1</reactor.version>
         <micrometer.version>1.14.2</micrometer.version>
         <jspecify.version>1.0.0</jspecify.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
     </properties>

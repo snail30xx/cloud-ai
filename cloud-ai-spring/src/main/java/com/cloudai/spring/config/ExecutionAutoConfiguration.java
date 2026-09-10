@@ -1,0 +1,33 @@
+package com.cloudai.spring.config;
+
+import com.cloudai.execution.impl.ToolExecutionService;
+import com.cloudai.execution.spi.ToolRegistry;
+import com.cloudai.security.impl.SecurityInterceptor;
+import com.cloudai.spring.properties.CloudAiProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnProperty(name = "cloud-ai.execution.enabled", havingValue = "true", matchIfMissing = true)
+public class ExecutionAutoConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public ToolRegistry toolRegistry(CloudAiProperties props) {
+        var exec = props.execution() != null ? props.execution() : new CloudAiProperties.Execution();
+        return com.cloudai.execution.config.ExecutionAutoConfiguration.toolRegistry(
+                exec.fileReadEnabled(),
+                exec.fileWriteEnabled(),
+                exec.shellEnabled());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ToolExecutionService toolExecutionService(
+            ToolRegistry toolRegistry,
+            SecurityInterceptor securityInterceptor) {
+        return com.cloudai.execution.config.ExecutionAutoConfiguration.toolExecutionService(
+                toolRegistry, securityInterceptor);
+    }
+}
