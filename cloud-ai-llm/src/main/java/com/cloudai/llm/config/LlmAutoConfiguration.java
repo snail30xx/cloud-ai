@@ -2,6 +2,7 @@ package com.cloudai.llm.config;
 
 import com.cloudai.core.chat.ChatModel;
 import com.cloudai.llm.ModelRouter;
+import com.cloudai.llm.adapter.AnthropicLlmAdapter;
 import com.cloudai.llm.adapter.DeepSeekLlmAdapter;
 import com.cloudai.llm.adapter.OpenAiLlmAdapter;
 import com.cloudai.llm.observation.ChatModelObservationContext;
@@ -18,8 +19,9 @@ import java.util.Map;
  *
  * <p>根据 provider 的 capabilities 或名称自动选择适配器类型：
  * <ul>
+ *   <li>名称为 "anthropic" 或 capabilities 包含 "anthropic" → AnthropicLlmAdapter（Messages API 协议）</li>
  *   <li>capabilities 包含 "thinking" → DeepSeekLlmAdapter</li>
- *   <li>其他 → OpenAiLlmAdapter</li>
+ *   <li>其他 → OpenAiLlmAdapter（OpenAI 兼容协议）</li>
  * </ul>
  *
  * @author cloud-ai
@@ -75,9 +77,13 @@ public final class LlmAutoConfiguration {
         return router;
     }
 
-    private static ChatModel createAdapter(String name, ProviderProperties props,
-                                           ObservationRegistry registry,
-                                           @Nullable ObservationConvention<ChatModelObservationContext> convention) {
+    static ChatModel createAdapter(String name, ProviderProperties props,
+                                   ObservationRegistry registry,
+                                   @Nullable ObservationConvention<ChatModelObservationContext> convention) {
+        if ("anthropic".equalsIgnoreCase(name) || props.capabilities().contains("anthropic")) {
+            log.info("Creating AnthropicLlmAdapter for '{}' (Anthropic Messages API)", name);
+            return new AnthropicLlmAdapter(props, registry, convention);
+        }
         if (props.capabilities().contains("thinking")) {
             log.info("Creating DeepSeekLlmAdapter for '{}' (thinking enabled)", name);
             return new DeepSeekLlmAdapter(props, registry, convention);
