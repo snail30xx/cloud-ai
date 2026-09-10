@@ -1,6 +1,5 @@
 package com.cloudai.skills.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.nio.file.Path;
 
@@ -10,7 +9,6 @@ import java.nio.file.Path;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties(prefix = "cloud-ai.skills")
 public class SkillProperties {
 
     private Path workDir = Path.of(".");

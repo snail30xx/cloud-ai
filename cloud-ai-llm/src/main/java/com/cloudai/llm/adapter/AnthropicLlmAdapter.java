@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
 import org.jspecify.annotations.Nullable;
-import org.springframework.web.client.RestClient;
+import java.net.http.HttpRequest;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -55,9 +55,9 @@ public class AnthropicLlmAdapter extends AbstractLlmAdapter {
     // ==================== 模板方法：认证 ====================
 
     @Override
-    protected void configureRestClient(RestClient.Builder builder) {
-        builder.defaultHeader("x-api-key", props.apiKey());
-        builder.defaultHeader("anthropic-version", "2023-06-01");
+    protected void configureRequest(HttpRequest.Builder builder) {
+        builder.header("x-api-key", props.apiKey());
+        builder.header("anthropic-version", "2023-06-01");
     }
 
     // ==================== 模板方法：端点 + 响应类型 ====================

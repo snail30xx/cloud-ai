@@ -3,18 +3,15 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.cloudai</groupId>
         <artifactId>cloud-ai</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-
     <artifactId>cloud-ai-runtime</artifactId>
     <packaging>jar</packaging>
     <name>Cloud AI Runtime</name>
-    <description>运行时引擎：AgentLoop、ToolRegistry 实现</description>
-
+    <description>Agent 运行时层：AgentLoop、StopCondition、AgentLoopFactory</description>
     <dependencies>
         <dependency>
             <groupId>com.cloudai</groupId>
@@ -26,28 +23,15 @@
         </dependency>
         <dependency>
             <groupId>com.cloudai</groupId>
-            <artifactId>cloud-ai-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.cloudai</groupId>
             <artifactId>cloud-ai-execution</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
 </project>

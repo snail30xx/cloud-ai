@@ -3,33 +3,30 @@ package com.cloudai.context.config;
 import com.cloudai.context.impl.DefaultEnvironmentProvider;
 import com.cloudai.context.impl.FilesystemProjectContextProvider;
 import com.cloudai.context.spi.ContextProvider;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * 上下文层自动装配。
+ * 上下文模块工厂 — 替代 Spring 自动装配。
  *
  * @author cloud-ai
  * @since 1.0
  */
-@AutoConfiguration
-@EnableConfigurationProperties(ContextProperties.class)
-public class ContextAutoConfiguration {
+public final class ContextAutoConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(ContextAutoConfiguration.class);
 
-    @Bean
-    @ConditionalOnMissingBean(name = "environmentProvider")
-    public ContextProvider environmentProvider(ContextProperties props) {
+    private ContextAutoConfiguration() {}
+
+    public static ContextProvider environmentProvider(ContextProperties props) {
+        log.info("Creating DefaultEnvironmentProvider: workDir={}", props.getWorkDir());
         return new DefaultEnvironmentProvider(props.getWorkDir());
     }
 
-    @Bean
-    @ConditionalOnMissingBean(name = "projectContextProvider")
-    public ContextProvider projectContextProvider(ContextProperties props) {
+    public static ContextProvider projectContextProvider(ContextProperties props) {
         if (!props.isProjectContextEnabled()) {
             return () -> com.cloudai.context.impl.PromptSectionImpl.empty("ProjectContext");
         }
+        log.info("Creating FilesystemProjectContextProvider: workDir={}", props.getWorkDir());
         return new FilesystemProjectContextProvider(props.getWorkDir());
     }
 }

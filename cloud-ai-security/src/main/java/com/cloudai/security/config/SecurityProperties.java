@@ -1,7 +1,6 @@
 package com.cloudai.security.config;
 
 import com.cloudai.security.model.OperationType;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.List;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties("cloud-ai.security")
 public record SecurityProperties(Approval approval, Permission permission) {
 
     public SecurityProperties {

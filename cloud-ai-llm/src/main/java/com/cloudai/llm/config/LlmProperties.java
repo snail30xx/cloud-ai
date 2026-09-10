@@ -1,6 +1,5 @@
 package com.cloudai.llm.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
@@ -11,7 +10,6 @@ import java.util.Map;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties("cloud-ai.llm")
 public record LlmProperties(
         @Nullable String defaultProvider,
         @Nullable Map<String, ProviderProperties> providers) {

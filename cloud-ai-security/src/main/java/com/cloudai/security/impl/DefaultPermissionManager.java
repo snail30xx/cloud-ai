@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.AntPathMatcher;
+import com.cloudai.security.util.AntPathMatcher;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class DefaultPermissionManager implements PermissionManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultPermissionManager.class);
-    private static final AntPathMatcher pathMatcher = new AntPathMatcher();
+        // AntPathMatcher 改为静态方法调用
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final List<PermissionRule> rules = new CopyOnWriteArrayList<>();
@@ -120,7 +120,7 @@ public class DefaultPermissionManager implements PermissionManager {
             if (opType != operation) return false;
             if (targetPattern.equals("*") || targetPattern.equals("**")) return true;
             if (target.isEmpty()) return false;
-            return pathMatcher.match(targetPattern, target);
+            return AntPathMatcher.match(targetPattern, target);
         }
 
         @Override

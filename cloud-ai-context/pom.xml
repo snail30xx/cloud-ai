@@ -3,31 +3,23 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.cloudai</groupId>
         <artifactId>cloud-ai</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-
     <artifactId>cloud-ai-context</artifactId>
     <packaging>jar</packaging>
     <name>Cloud AI Context</name>
-    <description>上下文层：工作目录、环境信息、AGENTS.md/CLAUDE.md 读取</description>
-
+    <description>上下文层：EnvironmentProvider、ProjectContextProvider</description>
     <dependencies>
         <dependency>
             <groupId>com.cloudai</groupId>
             <artifactId>cloud-ai-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
 </project>

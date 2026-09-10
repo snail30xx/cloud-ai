@@ -1,7 +1,6 @@
 package com.cloudai.runtime.config;
 
 import com.cloudai.runtime.model.AgentType;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
@@ -15,7 +14,6 @@ import java.time.Duration;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties("cloud-ai.agent")
 public record RuntimeProperties(int maxTurns, Duration timeout, AgentType type, int maxPlanSteps) {
 
     public RuntimeProperties() {

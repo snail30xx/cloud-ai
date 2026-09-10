@@ -1,6 +1,5 @@
 package com.cloudai.memory.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * 记忆模块配置属性 — 绑定 {@code cloud-ai.memory} 命名空间。
@@ -12,7 +11,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties("cloud-ai.memory")
 public record MemoryProperties(
         int maxContextTokens,
         int maxRetrievalResults,

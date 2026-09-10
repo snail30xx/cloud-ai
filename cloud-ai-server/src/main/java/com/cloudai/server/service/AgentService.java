@@ -23,7 +23,6 @@ import com.cloudai.skills.spi.SkillRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import java.util.List;
  * @author cloud-ai
  * @since 1.0
  */
-@Service
 public class AgentService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentService.class);

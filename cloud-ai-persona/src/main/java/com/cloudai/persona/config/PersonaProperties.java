@@ -1,7 +1,6 @@
 package com.cloudai.persona.config;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.Map;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties("cloud-ai.persona")
 public record PersonaProperties(
         @Nullable String defaultPersonaId,
         @Nullable Map<String, PersonaConfig> personas) {

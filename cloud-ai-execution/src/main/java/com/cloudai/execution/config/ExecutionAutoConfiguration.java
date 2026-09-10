@@ -10,39 +10,32 @@ import com.cloudai.execution.spi.ToolRegistry;
 import com.cloudai.security.impl.SecurityInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * 执行模块自动装配。
+ * 执行模块工厂 — 替代 Spring 自动装配。
  *
- * <p>通过 {@code cloud-ai.execution.enabled} 控制（默认 true）。
- * 自动注册内置工具（file_read、file_write、shell_exec）和 {@link ToolExecutionService}。</p>
+ * <p>自动注册内置工具（file_read、file_write、shell_exec）和 ToolExecutionService。</p>
  *
  * @author cloud-ai
  * @since 1.0
  */
-@Configuration
-@EnableConfigurationProperties(ExecutionProperties.class)
-@ConditionalOnProperty(name = "cloud-ai.execution.enabled", havingValue = "true", matchIfMissing = true)
-public class ExecutionAutoConfiguration {
+public final class ExecutionAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(ExecutionAutoConfiguration.class);
 
-    @Bean
-    @ConditionalOnMissingBean
-    public ToolRegistry toolRegistry(Environment env) {
-        var registry = new DefaultToolRegistry();
+    private ExecutionAutoConfiguration() {}
 
-        var fileReadEnabled = env.getProperty("cloud-ai.execution.file-read-enabled", Boolean.class, true);
-        var fileWriteEnabled = env.getProperty("cloud-ai.execution.file-write-enabled", Boolean.class, true);
-        var shellEnabled = env.getProperty("cloud-ai.execution.shell-enabled", Boolean.class, true);
+    /**
+     * 创建工具注册表并注册内置工具。
+     *
+     * @param fileReadEnabled  是否启用 file_read 工具
+     * @param fileWriteEnabled 是否启用 file_write 工具
+     * @param shellEnabled     是否启用 shell_exec 工具
+     */
+    public static ToolRegistry toolRegistry(boolean fileReadEnabled, boolean fileWriteEnabled, boolean shellEnabled) {
+        var registry = new DefaultToolRegistry();
 
         if (fileReadEnabled) {
             registry.register(
@@ -80,9 +73,7 @@ public class ExecutionAutoConfiguration {
         return registry;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public ToolExecutionService toolExecutionService(
+    public static ToolExecutionService toolExecutionService(
             ToolRegistry toolRegistry,
             SecurityInterceptor securityInterceptor) {
         log.info("Creating ToolExecutionService");

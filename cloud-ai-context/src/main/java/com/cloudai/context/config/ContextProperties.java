@@ -1,6 +1,5 @@
 package com.cloudai.context.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.nio.file.Path;
 
@@ -10,7 +9,6 @@ import java.nio.file.Path;
  * @author cloud-ai
  * @since 1.0
  */
-@ConfigurationProperties(prefix = "cloud-ai.context")
 public class ContextProperties {
 
     /**

@@ -3,7 +3,6 @@ package com.cloudai.llm.adapter;
 import com.cloudai.core.model.ChatRequest;
 import com.cloudai.core.model.ChatResponse;
 import com.cloudai.core.model.FinishReason;
-import com.cloudai.core.model.Generation;
 import com.cloudai.core.model.Message;
 import com.cloudai.core.model.ModelInfo;
 import com.cloudai.core.model.ModelOptions;
@@ -17,7 +16,6 @@ import com.cloudai.llm.exception.LlmClientException;
 import com.cloudai.llm.exception.LlmRateLimitException;
 import com.cloudai.llm.exception.LlmServerException;
 import com.cloudai.llm.exception.LlmTimeoutException;
-import com.cloudai.llm.interceptor.LoggingClientHttpRequestInterceptor;
 import com.cloudai.llm.model.OpenAiChatRequest;
 import com.cloudai.llm.model.OpenAiChatResponse;
 import com.cloudai.llm.model.OpenAiMessage;
@@ -35,9 +33,6 @@ import io.micrometer.observation.ObservationRegistry;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
@@ -45,7 +40,12 @@ import reactor.core.scheduler.Schedulers;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,12 +53,14 @@ import java.util.Map;
 /**
  * LLM 适配器抽象基类。
  *
- * <p>实现 {@link com.cloudai.core.spi.ChatModel}（运行时调用）和 {@link com.cloudai.core.spi.ModelDiscovery}（模型发现），
+ * <p>实现 ChatModel（运行时调用）和 ModelDiscovery（模型发现），
  * 封装通用逻辑：HTTP 调用、请求/响应映射、SSE 解析、观测、重试、异常映射。</p>
+ *
+ * <p>使用 JDK 内置 {@link HttpClient} 替代 Spring RestClient。</p>
  *
  * <p>子类通过覆盖模板方法适配不同 LLM 协议（OpenAI、DeepSeek、Anthropic 等）：</p>
  * <ul>
- *   <li>{@link #configureRestClient(RestClient.Builder)} — 认证 header</li>
+ *   <li>{@link #configureRequest(HttpRequest.Builder)} — 认证 header</li>
  *   <li>{@link #getChatEndpoint()} — API 端点路径</li>
  *   <li>{@link #getChatResponseType()} — 响应体类型</li>
  *   <li>{@link #buildRequestBodyInternal(ChatRequest)} — 请求体构建</li>
@@ -71,7 +73,7 @@ import java.util.Map;
 public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    protected final RestClient restClient;
+    protected final HttpClient httpClient;
     protected final String provider;
     protected final String model;
     protected final ProviderProperties props;
@@ -95,37 +97,22 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
         this.observationRegistry = observationRegistry != null ? observationRegistry : ObservationRegistry.NOOP;
         this.observationConvention = convention != null ? convention : DefaultChatModelObservationConvention.INSTANCE;
 
-        this.restClient = buildRestClient(props);
-    }
-
-    /**
-     * 构建 RestClient，子类可覆盖 {@link #configureRestClient(RestClient.Builder)} 来自定义 header。
-     */
-    protected RestClient buildRestClient(ProviderProperties props) {
-        var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(props.timeout());
-        factory.setReadTimeout(props.timeout());
-
-        var builder = RestClient.builder()
-                .baseUrl(props.baseUrl())
-                .defaultHeader("Content-Type", "application/json")
-                .requestFactory(factory)
-                .requestInterceptor(new LoggingClientHttpRequestInterceptor());
-        configureRestClient(builder);
-        return builder.build();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(props.timeout())
+                .build();
     }
 
     /**
      * 子类覆盖此方法添加自定义 header（如认证方式）。
-     * 默认添加 OpenAI 兼容的 {@code Authorization: Bearer} 头。
+     * 默认添加 OpenAI 兼容的 Authorization: Bearer 头。
      */
-    protected void configureRestClient(RestClient.Builder builder) {
-        builder.defaultHeader("Authorization", "Bearer " + props.apiKey());
+    protected void configureRequest(HttpRequest.Builder builder) {
+        builder.header("Authorization", "Bearer " + props.apiKey());
     }
 
     // ==================== 模板方法（子类可覆盖以适配不同协议） ====================
 
-    /** 聊天补全端点路径，默认 {@code /chat/completions}（OpenAI 兼容协议） */
+    /** 聊天补全端点路径，默认 /chat/completions（OpenAI 兼容协议） */
     protected String getChatEndpoint() {
         return "/chat/completions";
     }
@@ -135,7 +122,7 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
         return OpenAiChatResponse.class;
     }
 
-    /** 构建请求体，默认委托给 {@link #buildRequestBody(ChatRequest)} */
+    /** 构建请求体，默认委托给 buildRequestBody(ChatRequest) */
     protected Object buildRequestBodyInternal(ChatRequest request) {
         return buildRequestBody(request);
     }
@@ -148,7 +135,7 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
         return body;
     }
 
-    /** 预处理请求体（如展开 {@code extraBody}），在发送 HTTP 请求前调用 */
+    /** 预处理请求体（如展开 extraBody），在发送 HTTP 请求前调用 */
     protected Object prepareRequestBody(Object body) {
         if (body instanceof OpenAiChatRequest oai
                 && oai.extraBody() != null && !oai.extraBody().isEmpty()) {
@@ -161,12 +148,12 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
         return body;
     }
 
-    /** 解析原始 HTTP 响应为 {@link ChatResponse}，默认委托给 {@link #parseResponse(OpenAiChatResponse)} */
+    /** 解析原始 HTTP 响应为 ChatResponse，默认委托给 parseResponse(OpenAiChatResponse) */
     protected ChatResponse parseResponseInternal(Object rawResponse) {
         return parseResponse((OpenAiChatResponse) rawResponse);
     }
 
-    /** 解析单行 SSE 数据为 {@link ChatResponse}，返回 {@code null} 表示跳过该行 */
+    /** 解析单行 SSE 数据为 ChatResponse，返回 null 表示跳过该行 */
     @Nullable
     protected ChatResponse parseSseLineInternal(String data) throws Exception {
         var chunk = OBJECT_MAPPER.readValue(data, OpenAiChatResponse.class);
@@ -191,11 +178,12 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
 
     private ModelInfo fetchModelInfo() {
         try {
-            var entry = restClient.get()
-                    .uri("/models/{model}", model)
-                    .retrieve()
-                    .body(OpenAiModelListResponse.OpenAiModelEntry.class);
+            var request = buildGetRequest("/models/" + model);
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            checkHttpStatus(response.statusCode(), response.body());
 
+            var entry = OBJECT_MAPPER.readValue(response.body(),
+                    OpenAiModelListResponse.OpenAiModelEntry.class);
             if (entry != null) {
                 log.info("Fetched model info from API: id={}, owned_by={}", entry.id(), entry.ownedBy());
                 return new ModelInfo(provider, entry.id(), props.maxContextTokens(), props.capabilities());
@@ -214,13 +202,13 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
     @Override
     public List<ModelInfo> listModels() {
         try {
-            var response = restClient.get()
-                    .uri("/models")
-                    .retrieve()
-                    .body(OpenAiModelListResponse.class);
+            var request = buildGetRequest("/models");
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            checkHttpStatus(response.statusCode(), response.body());
 
-            if (response != null && response.data() != null) {
-                return response.data().stream()
+            var listResponse = OBJECT_MAPPER.readValue(response.body(), OpenAiModelListResponse.class);
+            if (listResponse != null && listResponse.data() != null) {
+                return listResponse.data().stream()
                         .map(entry -> new ModelInfo(provider, entry.id(),
                                 props.maxContextTokens(), props.capabilities()))
                         .toList();
@@ -266,32 +254,40 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
     protected Object doChatInternal(Object body) {
         Object requestBody = prepareRequestBody(body);
 
-        return restClient.post()
-                .uri(getChatEndpoint())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .onStatus(status -> status.value() == 401 || status.value() == 403,
-                        (req, resp) -> {
-                            throw new LlmAuthException(provider, resp.getStatusCode().value(),
-                                    "LLM authentication failed: " + resp.getStatusCode());
-                        })
-                .onStatus(status -> status.value() == 429,
-                        (req, resp) -> {
-                            throw new LlmRateLimitException(provider,
-                                    "LLM rate limited (429)");
-                        })
-                .onStatus(status -> status.value() >= 500,
-                        (req, resp) -> {
-                            throw new LlmServerException(provider, resp.getStatusCode().value(),
-                                    "LLM server error: " + resp.getStatusCode());
-                        })
-                .onStatus(status -> status.value() >= 400,
-                        (req, resp) -> {
-                            throw new LlmClientException(provider, resp.getStatusCode().value(),
-                                    "LLM client error: " + resp.getStatusCode());
-                        })
-                .body(getChatResponseType());
+        try {
+            var jsonBody = OBJECT_MAPPER.writeValueAsString(requestBody);
+            var requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(props.baseUrl() + getChatEndpoint()))
+                    .header("Content-Type", "application/json")
+                    .timeout(props.timeout())
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
+            configureRequest(requestBuilder);
+
+            log.info("[HTTP Request] POST {}{}", props.baseUrl(), getChatEndpoint());
+            if (log.isDebugEnabled()) {
+                log.debug("[HTTP Request Body] {}", jsonBody);
+            }
+
+            long start = System.currentTimeMillis();
+            var response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+            long elapsed = System.currentTimeMillis() - start;
+
+            log.info("[HTTP Response] {} -> {} ({}ms)", props.baseUrl(), response.statusCode(), elapsed);
+
+            checkHttpStatus(response.statusCode(), response.body());
+
+            if (log.isDebugEnabled()) {
+                log.debug("[HTTP Response Body] {}", response.body());
+            }
+
+            return OBJECT_MAPPER.readValue(response.body(), getChatResponseType());
+        } catch (LlmAuthException | LlmRateLimitException | LlmServerException | LlmClientException e) {
+            throw e;
+        } catch (SocketTimeoutException e) {
+            throw new LlmTimeoutException(provider, "LLM call timed out", e);
+        } catch (Exception e) {
+            throw new LlmServerException(provider, 0, "LLM call failed: " + e.getMessage());
+        }
     }
 
     // ==================== ChatModel: stream ====================
@@ -313,37 +309,42 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
                 scope -> Flux.defer(() -> Flux.<ChatResponse>create(sink -> {
                     try {
                         Object requestBody = prepareRequestBody(body);
+                        var jsonBody = OBJECT_MAPPER.writeValueAsString(requestBody);
 
-                        restClient.post()
-                                .uri(getChatEndpoint())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(requestBody)
-                                .exchange((req, resp) -> {
-                                    try (var reader = new BufferedReader(
-                                            new InputStreamReader(resp.getBody(), StandardCharsets.UTF_8))) {
-                                        String line;
-                                        while ((line = reader.readLine()) != null) {
-                                            if (line.startsWith("data: ")) {
-                                                String data = line.substring(6).trim();
-                                                if ("[DONE]".equals(data)) {
-                                                    break;
-                                                }
-                                                try {
-                                                    var chatChunk = parseSseLineInternal(data);
-                                                    if (chatChunk != null) {
-                                                        ctx.setResponse(chatChunk);
-                                                        sink.next(chatChunk);
-                                                        chunkCount[0]++;
-                                                    }
-                                                } catch (Exception e) {
-                                                    log.debug("Failed to parse SSE chunk: {}", data, e);
-                                                }
-                                            }
-                                        }
+                        var requestBuilder = HttpRequest.newBuilder()
+                                .uri(URI.create(props.baseUrl() + getChatEndpoint()))
+                                .header("Content-Type", "application/json")
+                                .timeout(props.timeout())
+                                .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
+                        configureRequest(requestBuilder);
+
+                        var response = httpClient.send(requestBuilder.build(),
+                                HttpResponse.BodyHandlers.ofInputStream());
+                        checkHttpStatus(response.statusCode(), "");
+
+                        try (var reader = new BufferedReader(
+                                new InputStreamReader(response.body(), StandardCharsets.UTF_8))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                if (line.startsWith("data: ")) {
+                                    String data = line.substring(6).trim();
+                                    if ("[DONE]".equals(data)) {
+                                        break;
                                     }
-                                    sink.complete();
-                                    return null;
-                                });
+                                    try {
+                                        var chatChunk = parseSseLineInternal(data);
+                                        if (chatChunk != null) {
+                                            ctx.setResponse(chatChunk);
+                                            sink.next(chatChunk);
+                                            chunkCount[0]++;
+                                        }
+                                    } catch (Exception e) {
+                                        log.debug("Failed to parse SSE chunk: {}", data, e);
+                                    }
+                                }
+                            }
+                        }
+                        sink.complete();
                     } catch (Exception e) {
                         if (isTimeoutException(e)) {
                             sink.error(new LlmTimeoutException(provider, "LLM stream timed out", e));
@@ -373,6 +374,37 @@ public abstract class AbstractLlmAdapter implements ChatModel, ModelDiscovery {
                 .subscribeOn(Schedulers.boundedElastic()),
                 scope -> { /* scope closed by using, observation stopped by doFinally */ }
         );
+    }
+
+    // ==================== HTTP 辅助方法 ====================
+
+    /** 构建 GET 请求，自动添加认证 header。 */
+    protected HttpRequest buildGetRequest(String path) {
+        var builder = HttpRequest.newBuilder()
+                .uri(URI.create(props.baseUrl() + path))
+                .timeout(props.timeout())
+                .GET();
+        configureRequest(builder);
+        return builder.build();
+    }
+
+    /** 根据 HTTP 状态码和响应体抛出对应的 LlmException。 */
+    protected void checkHttpStatus(int statusCode, String body) {
+        if (statusCode == 401 || statusCode == 403) {
+            throw new LlmAuthException(provider, statusCode,
+                    "LLM authentication failed: " + statusCode);
+        }
+        if (statusCode == 429) {
+            throw new LlmRateLimitException(provider, "LLM rate limited (429)");
+        }
+        if (statusCode >= 500) {
+            throw new LlmServerException(provider, statusCode,
+                    "LLM server error: " + statusCode);
+        }
+        if (statusCode >= 400) {
+            throw new LlmClientException(provider, statusCode,
+                    "LLM client error: " + statusCode);
+        }
     }
 
     // ==================== 请求构建 ====================

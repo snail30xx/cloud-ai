@@ -32,17 +32,20 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <spring-boot.version>4.1.0</spring-boot.version>
         <junit-jupiter.version>5.11.4</junit-jupiter.version>
         <mockito.version>5.12.0</mockito.version>
+        <jackson.version>2.18.2</jackson.version>
+        <slf4j.version>2.0.16</slf4j.version>
+        <logback.version>1.5.12</logback.version>
+        <reactor.version>3.7.1</reactor.version>
+        <micrometer.version>1.14.2</micrometer.version>
+        <jspecify.version>1.0.0</jspecify.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- JUnit BOM 必须在 spring-boot-dependencies 之前，因为 Spring Boot 4.1.0 管理 JUnit 6.x，
-                 IntelliJ IDEA 2024.3 的 JUnit Runner 不兼容 Platform 6.x -->
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
@@ -50,14 +53,58 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- Jackson -->
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
 
+            <!-- SLF4J + Logback -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <!-- Reactor -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${reactor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-test</artifactId>
+                <version>${reactor.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Micrometer -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-observation</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <!-- JSpecify -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${jspecify.version}</version>
+            </dependency>
+
+            <!-- Internal modules -->
             <dependency>
                 <groupId>com.cloudai</groupId>
                 <artifactId>cloud-ai-core</artifactId>
@@ -88,7 +135,7 @@
                 <artifactId>cloud-ai-skills</artifactId>
                 <version>${project.version}</version>
             </dependency>
-                                    <dependency>
+            <dependency>
                 <groupId>com.cloudai</groupId>
                 <artifactId>cloud-ai-security</artifactId>
                 <version>${project.version}</version>
@@ -103,16 +150,10 @@
                 <artifactId>cloud-ai-runtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.cloudai</groupId>
                 <artifactId>cloud-ai-server</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-                        <dependency>
-                <groupId>org.springframework.retry</groupId>
-                <artifactId>spring-retry</artifactId>
-                <version>2.0.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -128,6 +169,10 @@
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
         </dependency>
     </dependencies>
 
@@ -149,15 +194,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                 </plugin>
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>${spring-boot.version}</version>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
 </project>
-
-
-
