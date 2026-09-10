@@ -16,7 +16,9 @@ import java.util.Map;
  * @param generations 候选结果列表
  * @param usage       Token 统计
  * @param metadata    响应级元数据（rate limit、reasoning 等）
- */
+  * @author cloud-ai
+ * @since 1.0
+*/
 public record ChatResponse(
         @Nullable String id,
         @Nullable String model,
@@ -29,7 +31,9 @@ public record ChatResponse(
         metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
     }
 
-    /** 便捷工厂：单候选结果 */
+    /** 便捷工厂：单候选结果  * @author cloud-ai
+ * @since 1.0
+*/
     public static ChatResponse of(String content, List<ToolCall> toolCalls,
                                    TokenUsage usage, FinishReason finishReason) {
         return new ChatResponse(null, null,
@@ -37,7 +41,9 @@ public record ChatResponse(
                 usage, Map.of());
     }
 
-    /** 便捷工厂：单候选结果 + 响应元数据 */
+    /** 便捷工厂：单候选结果 + 响应元数据  * @author cloud-ai
+ * @since 1.0
+*/
     public static ChatResponse of(@Nullable String id, @Nullable String model, String content,
                                    List<ToolCall> toolCalls, TokenUsage usage,
                                    FinishReason finishReason, Map<String, Object> metadata) {
@@ -48,17 +54,23 @@ public record ChatResponse(
 
     // ==================== 单候选便捷访问 ====================
 
-    /** 第一个候选的文本内容 */
+    /** 第一个候选的文本内容  * @author cloud-ai
+ * @since 1.0
+*/
     public String content() {
         return generations.isEmpty() ? "" : generations.get(0).content();
     }
 
-    /** 第一个候选的工具调用 */
+    /** 第一个候选的工具调用  * @author cloud-ai
+ * @since 1.0
+*/
     public List<ToolCall> toolCalls() {
         return generations.isEmpty() ? List.of() : generations.get(0).toolCalls();
     }
 
-    /** 第一个候选的结束原因 */
+    /** 第一个候选的结束原因  * @author cloud-ai
+ * @since 1.0
+*/
     public FinishReason finishReason() {
         return generations.isEmpty() ? FinishReason.STOP : generations.get(0).finishReason();
     }

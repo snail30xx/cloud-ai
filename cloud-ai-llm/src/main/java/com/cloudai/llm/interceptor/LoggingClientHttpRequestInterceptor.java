@@ -16,9 +16,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * RestClient 日志拦截器 — 记录每次 HTTP 请求和响应的完整 JSON。
+ * RestClient 日志拦截器 — 记录每次 HTTP 请求和响应的摘要信息。
  *
- * <p>INFO 级别输出请求/响应的完整 JSON body。</p>
+ * <p>INFO 级别输出请求/响应摘要（方法、URI、状态码、耗时）。
+ * DEBUG 级别输出完整 JSON body（含敏感对话内容，生产环境慎用）。
+ * SSE 流式响应不缓冲 body，保持真实流式语义。</p>
  *
  * @author cloud-ai
  * @since 1.0
@@ -32,19 +34,32 @@ public class LoggingClientHttpRequestInterceptor implements ClientHttpRequestInt
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
             throws IOException {
-        String reqBody = body != null && body.length > 0 ? new String(body, StandardCharsets.UTF_8) : "(empty)";
-        log.info("[HTTP Request] {} {}\n{}", request.getMethod(), request.getURI(), prettyJson(reqBody));
+        log.info("[HTTP Request] {} {}", request.getMethod(), request.getURI());
+        if (log.isDebugEnabled()) {
+            String reqBody = body != null && body.length > 0 ? new String(body, StandardCharsets.UTF_8) : "(empty)";
+            log.debug("[HTTP Request Body]\n{}", prettyJson(reqBody));
+        }
 
         long start = System.currentTimeMillis();
         ClientHttpResponse response = execution.execute(request, body);
         long elapsed = System.currentTimeMillis() - start;
 
+        // SSE 流式响应不缓冲 body，保持真实流式语义
+        String contentType = response.getHeaders().getContentType() != null
+                ? response.getHeaders().getContentType().toString() : "";
+        if (contentType.contains("text/event-stream")) {
+            log.info("[HTTP Response] {} -> {} ({}ms) [SSE, not buffered]",
+                    request.getURI(), response.getStatusCode(), elapsed);
+            return response;
+        }
+
+        // 非流式响应：缓冲 body 以支持重复读取和日志记录
         byte[] respBytes = response.getBody().readAllBytes();
-        String respBody = respBytes.length > 0 ? new String(respBytes, StandardCharsets.UTF_8) : "(empty)";
-
-        log.info("[HTTP Response] {} -> {} ({}ms)\n{}",
-                request.getURI(), response.getStatusCode(), elapsed, prettyJson(respBody));
-
+        log.info("[HTTP Response] {} -> {} ({}ms)", request.getURI(), response.getStatusCode(), elapsed);
+        if (log.isDebugEnabled()) {
+            String respBody = respBytes.length > 0 ? new String(respBytes, StandardCharsets.UTF_8) : "(empty)";
+            log.debug("[HTTP Response Body]\n{}", prettyJson(respBody));
+        }
         return new BufferedClientHttpResponse(response, respBytes);
     }
 

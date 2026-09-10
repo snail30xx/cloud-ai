@@ -58,6 +58,8 @@ public class AgentService {
     private final ToolRegistry toolRegistry;
     private final SkillRegistry skillRegistry;
     private final PromptAssembler promptAssembler;
+    private final DefaultEnvironmentProvider envProvider;
+    private final FilesystemProjectContextProvider projectProvider;
     private final java.nio.file.Path workDir;
 
     public AgentService(AgentLoop agentLoop,
@@ -77,6 +79,8 @@ public class AgentService {
         this.skillRegistry = skillRegistry;
         this.workDir = workDir;
         this.promptAssembler = new DefaultPromptAssembler();
+        this.envProvider = new DefaultEnvironmentProvider(workDir);
+        this.projectProvider = new FilesystemProjectContextProvider(workDir);
     }
 
     public AgentResponse run(String prompt, String provider, Integer maxTurns,
@@ -108,11 +112,9 @@ public class AgentService {
         sections.add(new PersonaPromptSection(persona, personaAssembler, tools));
 
         // [order=30] Environment
-        var envProvider = new DefaultEnvironmentProvider(workDir);
         sections.add(envProvider.buildSection());
 
         // [order=40] Project Context
-        var projectProvider = new FilesystemProjectContextProvider(workDir);
         sections.add(projectProvider.buildSection());
 
         // [order=50] Skill Menu
@@ -147,3 +149,4 @@ public class AgentService {
         return s.length() <= max ? s : s.substring(0, max) + "...";
     }
 }
+

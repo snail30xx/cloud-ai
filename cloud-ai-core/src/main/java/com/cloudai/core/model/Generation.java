@@ -12,7 +12,9 @@ import java.util.Map;
  * @param toolCalls    工具调用
  * @param finishReason 结束原因
  * @param metadata     候选级元数据（reasoning content、logprobs 等）
- */
+  * @author cloud-ai
+ * @since 1.0
+*/
 public record Generation(
         @Nullable String content,
         @Nullable List<ToolCall> toolCalls,

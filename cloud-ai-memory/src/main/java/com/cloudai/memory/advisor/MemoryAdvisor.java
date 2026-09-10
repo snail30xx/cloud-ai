@@ -9,6 +9,7 @@ import com.cloudai.memory.spi.MemoryRetriever;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -69,7 +70,7 @@ public class MemoryAdvisor implements Advisor {
         log.debug("MemoryAdvisor retrieved {} memory entry/entries for agent '{}'", memories.size(), agentId);
 
         var memoryContext = formatMemories(memories);
-        var augmented = new java.util.ArrayList<>(request.messages());
+        var augmented = new ArrayList<>(request.messages());
         // 在消息列表头部（system 消息之后）插入记忆上下文
         augmented.add(0, Message.system(memoryContext));
 
@@ -101,3 +102,4 @@ public class MemoryAdvisor implements Advisor {
         return sb.toString();
     }
 }
+

@@ -22,7 +22,9 @@ import java.util.List;
  * @param toolCalls 工具调用列表（role=assistant 时使用）
  * @param name      可选名称
  * @param toolCallId 工具调用 ID（role=tool 时使用）
- */
+  * @author cloud-ai
+ * @since 1.0
+*/
 public record Message(String role, @Nullable String content, @Nullable List<ToolCall> toolCalls,
                        @Nullable String name, @Nullable String toolCallId) {
     public Message {
@@ -34,16 +36,24 @@ public record Message(String role, @Nullable String content, @Nullable List<Tool
 
     // ==================== 角色判断 ====================
 
-    /** 是否为用户消息 */
+    /** 是否为用户消息  * @author cloud-ai
+ * @since 1.0
+*/
     public boolean isUser() { return "user".equals(role); }
 
-    /** 是否为系统消息 */
+    /** 是否为系统消息  * @author cloud-ai
+ * @since 1.0
+*/
     public boolean isSystem() { return "system".equals(role); }
 
-    /** 是否为助手消息 */
+    /** 是否为助手消息  * @author cloud-ai
+ * @since 1.0
+*/
     public boolean isAssistant() { return "assistant".equals(role); }
 
-    /** 是否为工具结果消息 */
+    /** 是否为工具结果消息  * @author cloud-ai
+ * @since 1.0
+*/
     public boolean isTool() { return "tool".equals(role); }
 
     // ==================== 静态工厂方法 ====================
@@ -73,14 +83,18 @@ public record Message(String role, @Nullable String content, @Nullable List<Tool
 
     /**
      * 创建带名称的消息（用于多用户场景）。
-     */
+      * @author cloud-ai
+ * @since 1.0
+*/
     public static Message user(String content, String name) {
         return new Message("user", content, null, name, null);
     }
 
     /**
      * 创建带名称的工具结果消息。
-     */
+      * @author cloud-ai
+ * @since 1.0
+*/
     public static Message tool(String toolCallId, String name, String content) {
         if (toolCallId == null || toolCallId.isBlank()) {
             throw new IllegalArgumentException("toolCallId must not be blank for tool messages");

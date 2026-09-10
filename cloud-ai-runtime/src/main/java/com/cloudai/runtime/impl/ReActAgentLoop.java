@@ -4,6 +4,7 @@ import com.cloudai.core.model.ChatRequest;
 import com.cloudai.core.model.ChatResponse;
 import com.cloudai.core.model.Message;
 import com.cloudai.core.model.ToolCall;
+import com.cloudai.core.model.ToolDefinition;
 import com.cloudai.execution.impl.ToolExecutionService;
 import com.cloudai.execution.model.ToolResult;
 import com.cloudai.execution.spi.ToolRegistry;
@@ -50,8 +51,8 @@ public class ReActAgentLoop extends AgentLoopTemplate
     private final ModelRouter modelRouter;
     private final ToolRegistry toolRegistry;
 
-    /** 工具注册表（供 AgentLoopTemplate 日志使用）。 */
-    public ToolRegistry toolRegistry() {
+    /** 工具注册表（package-private，供同包测试使用）。 */
+    ToolRegistry toolRegistry() {
         return toolRegistry;
     }
     private final ToolExecutionService toolExecutionService;
@@ -178,6 +179,11 @@ public class ReActAgentLoop extends AgentLoopTemplate
     // ==================== TurnLifecycle ====================
 
     @Override
+    public List<ToolDefinition> resolveTools(AgentRequest request) {
+        return toolRegistry.listDefinitions();
+    }
+
+    @Override
     public ChatResponse callModel(AgentSession session, AgentRequest request) {
         var tools = toolRegistry.listDefinitions();
         var chatRequest = new ChatRequest(session.history(), tools, request.options());
@@ -218,3 +224,6 @@ public class ReActAgentLoop extends AgentLoopTemplate
         return (provided != null && !provided.isBlank()) ? provided : UUID.randomUUID().toString();
     }
 }
+
+
+

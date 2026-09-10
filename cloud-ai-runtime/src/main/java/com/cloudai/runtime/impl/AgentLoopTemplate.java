@@ -26,7 +26,7 @@ import java.util.List;
  * <p>通过三个 SPI 接口实现策略注入，模板方法不可覆盖：
  * <ul>
  *   <li>{@link SessionLifecycle} — 会话创建、续行检查、响应构建</li>
- *   <li>{@link TurnLifecycle} — LLM 调用、停止条件检查</li>
+ *   <li>{@link TurnLifecycle} — LLM 调用、工具解析、停止条件检查</li>
  *   <li>{@link StepLifecycle} — 工具执行、结果格式化</li>
  * </ul>
  *
@@ -107,18 +107,11 @@ public abstract class AgentLoopTemplate implements AgentLoop {
 
         tl.beforeTurn(session);
 
-        // 构建即将发送给 LLM 的 ChatRequest（与 callModel 内部逻辑一致）
-        var chatRequest = buildChatRequest(session, request);
-
-        // 打印完整请求 JSON
-        logJson("[LLM Request]", session.traceId(), session.turnsExecuted() + 1, chatRequest);
-
         var response = tl.callModel(session, request);
         session.incrementTurn();
         session.accumulateUsage(response.usage());
         session.addMessage(Message.assistant(response.content(), response.toolCalls()));
 
-        // 打印完整响应 JSON
         logJson("[LLM Response]", session.traceId(), session.turnsExecuted(), response);
 
         tl.afterModelCall(session, response);
@@ -144,32 +137,13 @@ public abstract class AgentLoopTemplate implements AgentLoop {
 
     // ==================== 内部方法 ====================
 
-    /**
-     * 构建 ChatRequest — 与 {@link com.cloudai.runtime.impl.ReActAgentLoop#callModel} 一致。
-     * 用于在 callModel 前打印完整的请求 JSON。
-     */
-    private com.cloudai.core.model.ChatRequest buildChatRequest(AgentSession session, AgentRequest request) {
-        // 使用 turnLifecycle 获取工具列表（如果它是 ReActAgentLoop 则有 toolRegistry）
-        // 这里直接用 session.history() 构建请求，与 ReActAgentLoop.callModel 逻辑一致
-        var tools = resolveTools(request);
-        return new com.cloudai.core.model.ChatRequest(session.history(), tools, request.options());
-    }
-
-    /**
-     * 解析可用工具定义列表。
-     */
-    private List<com.cloudai.core.model.ToolDefinition> resolveTools(AgentRequest request) {
-        var tl = turnLifecycle();
-        if (tl instanceof ReActAgentLoop react) {
-            return react.toolRegistry().listDefinitions();
-        }
-        return List.of();
-    }
-
     private void logJson(String tag, String traceId, int turn, Object payload) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
         try {
             var json = JSON.writeValueAsString(payload);
-            log.info("{} traceId={}, turn={}\n{}", tag, traceId, turn, json);
+            log.debug("{} traceId={}, turn={}\n{}", tag, traceId, turn, json);
         } catch (Exception e) {
             log.warn("{} traceId={}, turn={}, serialization error: {}", tag, traceId, turn, e.getMessage());
         }

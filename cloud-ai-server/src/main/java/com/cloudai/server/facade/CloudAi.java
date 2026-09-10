@@ -287,9 +287,10 @@ public final class CloudAi {
 
             // 4. 安全层
             var permissionManager = new DefaultPermissionManager();
-            for (var op : OperationType.values()) {
-                permissionManager.allow(op, "*");
-            }
+            // 默认仅允许低风险操作，SHELL_EXEC 需显式配置
+            permissionManager.allow(OperationType.FILE_READ, "**");
+            permissionManager.allow(OperationType.FILE_WRITE, "/workspace/**");
+            log.warn("CloudAi facade allows FILE_READ(**) and FILE_WRITE(/workspace/**) by default; SHELL_EXEC is denied unless configured");
             ApprovalGateway autoApprove = req -> ApprovalResponse.approved("auto-approved");
             var auditLogger = new Slf4jAuditLogger();
             var securityInterceptor = new SecurityInterceptor(
@@ -376,3 +377,4 @@ public final class CloudAi {
         private record ToolRegistration(String name, String description, ToolExecutor executor) {}
     }
 }
+

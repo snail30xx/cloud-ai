@@ -10,6 +10,7 @@ import org.springframework.retry.support.RetryTemplate;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -38,6 +39,9 @@ public final class RetryUtils {
     /** 共享的退避策略 — 无状态，线程安全 */
     private static final ExponentialBackOffPolicy SHARED_BACKOFF = createBackOffPolicy();
 
+    /** RetryTemplate 缓存，按 maxRetries 复用 */
+    private static final ConcurrentHashMap<Integer, RetryTemplate> TEMPLATE_CACHE = new ConcurrentHashMap<>();
+
     private RetryUtils() {}
 
     private static ExponentialBackOffPolicy createBackOffPolicy() {
@@ -59,9 +63,12 @@ public final class RetryUtils {
      * @throws RuntimeException 如果所有重试均失败
      */
     public static <T> T executeWithRetry(Supplier<T> callable, int maxRetries, String provider) {
-        var template = new RetryTemplate();
-        template.setBackOffPolicy(SHARED_BACKOFF);
-        template.setRetryPolicy(createRetryPolicy(maxRetries));
+        var template = TEMPLATE_CACHE.computeIfAbsent(maxRetries, k -> {
+            var t = new RetryTemplate();
+            t.setBackOffPolicy(SHARED_BACKOFF);
+            t.setRetryPolicy(createRetryPolicy(k));
+            return t;
+        });
         try {
             return template.execute(context -> {
                 if (context.getRetryCount() > 0) {

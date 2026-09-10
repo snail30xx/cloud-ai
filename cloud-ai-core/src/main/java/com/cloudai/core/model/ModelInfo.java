@@ -9,7 +9,9 @@ import java.util.List;
  * @param model        模型名称
  * @param maxTokens    最大上下文 Token
  * @param capabilities 能力列表
- */
+  * @author cloud-ai
+ * @since 1.0
+*/
 public record ModelInfo(String provider, String model, int maxTokens, List<String> capabilities) {
     public ModelInfo {
         capabilities = List.copyOf(capabilities);

@@ -18,7 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -154,7 +155,7 @@ class SecurityIntegrationTest {
 
         var latch = new CountDownLatch(1);
         var responseRef = new java.util.concurrent.atomic.AtomicReference<ApprovalResponse>();
-        var executor = Executors.newSingleThreadExecutor();
+        var executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
         executor.submit(() -> {
             responseRef.set(gateway.requestApproval(
@@ -193,3 +194,4 @@ class SecurityIntegrationTest {
         };
     }
 }
+

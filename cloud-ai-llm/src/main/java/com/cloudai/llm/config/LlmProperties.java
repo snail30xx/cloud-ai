@@ -3,8 +3,6 @@ package com.cloudai.llm.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 
 /**

@@ -1,9 +1,12 @@
 package com.cloudai.runtime.spi;
 
 import com.cloudai.core.model.ChatResponse;
+import com.cloudai.core.model.ToolDefinition;
 import com.cloudai.runtime.model.AgentRequest;
 import com.cloudai.runtime.model.AgentResponse;
 import com.cloudai.runtime.model.AgentSession;
+
+import java.util.List;
 
 /**
  * Turn 级生命周期 — 定义单轮迭代的 LLM 调用和停止条件检查。
@@ -32,6 +35,16 @@ public interface TurnLifecycle {
      * @return LLM 响应
      */
     ChatResponse callModel(AgentSession session, AgentRequest request);
+
+    /**
+     * 解析可用工具定义列表（用于构建 ChatRequest 和日志）。
+     *
+     * @param request 调用请求
+     * @return 工具定义列表，空列表表示无可用工具
+     */
+    default List<ToolDefinition> resolveTools(AgentRequest request) {
+        return List.of();
+    }
 
     /** Turn 前置钩子（默认空实现）。 */
     default void beforeTurn(AgentSession session) {

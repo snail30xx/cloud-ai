@@ -15,7 +15,9 @@ import java.util.Map;
  * @param topP        Top-P 采样
  * @param stop        停止词列表
  * @param extraBody   额外请求参数（透传给 provider，用于非标准参数）
- */
+  * @author cloud-ai
+ * @since 1.0
+*/
 public record ModelOptions(@Nullable String model, @Nullable Double temperature,
                            @Nullable Integer maxTokens, @Nullable Double topP,
                            @Nullable List<String> stop, @Nullable Map<String, Object> extraBody) {
@@ -27,17 +29,23 @@ public record ModelOptions(@Nullable String model, @Nullable Double temperature,
         extraBody = extraBody != null ? Map.copyOf(extraBody) : Map.of();
     }
 
-    /** 向后兼容的构造器（无 extraBody）。 */
+    /** 向后兼容的构造器（无 extraBody）。  * @author cloud-ai
+ * @since 1.0
+*/
     public ModelOptions(String model, Double temperature, Integer maxTokens, Double topP, List<String> stop) {
         this(model, temperature, maxTokens, topP, stop, Map.of());
     }
 
-    /** 创建 Builder。 */
+    /** 创建 Builder。  * @author cloud-ai
+ * @since 1.0
+*/
     public static Builder builder() {
         return new Builder();
     }
 
-    /** 基于当前值创建预填充的 Builder。 */
+    /** 基于当前值创建预填充的 Builder。  * @author cloud-ai
+ * @since 1.0
+*/
     public Builder mutate() {
         return new Builder()
                 .model(model)
@@ -48,19 +56,25 @@ public record ModelOptions(@Nullable String model, @Nullable Double temperature,
                 .extraBody(new HashMap<>(extraBody));
     }
 
-    /** 添加单个 extraBody 键值对。 */
+    /** 添加单个 extraBody 键值对。  * @author cloud-ai
+ * @since 1.0
+*/
     public ModelOptions withExtraBody(String key, Object value) {
         var map = new HashMap<>(extraBody);
         map.put(key, value);
         return new ModelOptions(model, temperature, maxTokens, topP, stop, Map.copyOf(map));
     }
 
-    /** 便捷：仅修改 model。 */
+    /** 便捷：仅修改 model。  * @author cloud-ai
+ * @since 1.0
+*/
     public ModelOptions withModel(String model) {
         return new ModelOptions(model, temperature, maxTokens, topP, stop, extraBody);
     }
 
-    /** ModelOptions Builder。 */
+    /** ModelOptions Builder。  * @author cloud-ai
+ * @since 1.0
+*/
     public static final class Builder {
         @Nullable
         private String model;

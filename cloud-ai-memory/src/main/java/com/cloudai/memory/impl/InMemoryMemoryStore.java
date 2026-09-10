@@ -6,7 +6,6 @@ import com.cloudai.memory.spi.MemoryStore;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * 基于内存 ConcurrentHashMap 的记忆存储 — 开发期默认实现。
@@ -45,7 +44,7 @@ public class InMemoryMemoryStore implements MemoryStore {
         return store.values().stream()
                 .filter(e -> agentId.equals(e.agentId()))
                 .sorted(java.util.Comparator.comparing(MemoryEntry::timestamp).reversed())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -57,7 +56,7 @@ public class InMemoryMemoryStore implements MemoryStore {
                 .filter(e -> agentId.equals(e.agentId()))
                 .filter(e -> sessionId.equals(e.sessionId()))
                 .sorted(java.util.Comparator.comparing(MemoryEntry::timestamp).reversed())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -82,3 +81,4 @@ public class InMemoryMemoryStore implements MemoryStore {
         return store.size();
     }
 }
+
