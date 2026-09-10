@@ -1,12 +1,12 @@
 package com.cloudai.example;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.FinishReason;
-import com.cloudai.core.model.Message;
-import com.cloudai.core.model.TokenUsage;
-import com.cloudai.core.model.ToolCall;
-import com.cloudai.core.spi.ChatModel;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.TokenUsage;
+import com.cloudai.core.tool.ToolCall;
+import com.cloudai.core.chat.ChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

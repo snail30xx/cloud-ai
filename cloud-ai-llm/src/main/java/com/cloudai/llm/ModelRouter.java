@@ -1,10 +1,10 @@
 package com.cloudai.llm;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.ModelInfo;
-import com.cloudai.core.spi.ChatModel;
-import com.cloudai.core.spi.ModelDiscovery;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.ChatModel;
+import com.cloudai.core.chat.ModelDiscovery;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

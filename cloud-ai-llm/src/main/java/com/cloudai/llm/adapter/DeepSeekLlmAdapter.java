@@ -1,6 +1,6 @@
 package com.cloudai.llm.adapter;
 
-import com.cloudai.core.model.ChatRequest;
+import com.cloudai.core.chat.ChatRequest;
 import com.cloudai.llm.config.ProviderProperties;
 import com.cloudai.llm.model.OpenAiChatRequest;
 import com.cloudai.llm.observation.ChatModelObservationContext;

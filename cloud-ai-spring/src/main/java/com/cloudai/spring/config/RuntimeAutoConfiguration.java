@@ -1,12 +1,12 @@
 package com.cloudai.spring.config;
 
-import com.cloudai.execution.impl.ToolExecutionService;
-import com.cloudai.execution.spi.ToolRegistry;
+import com.cloudai.execution.ToolExecutionService;
+import com.cloudai.execution.registry.ToolRegistry;
 import com.cloudai.llm.ModelRouter;
 import com.cloudai.runtime.config.RuntimeProperties;
-import com.cloudai.runtime.model.AgentType;
-import com.cloudai.runtime.spi.AgentLoop;
-import com.cloudai.runtime.spi.StopCondition;
+import com.cloudai.runtime.AgentType;
+import com.cloudai.runtime.AgentLoop;
+import com.cloudai.runtime.StopCondition;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

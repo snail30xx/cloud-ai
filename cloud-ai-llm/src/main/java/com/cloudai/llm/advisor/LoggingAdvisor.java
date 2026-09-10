@@ -1,6 +1,6 @@
 package com.cloudai.llm.advisor;
 
-import com.cloudai.core.model.ChatRequest;
+import com.cloudai.core.chat.ChatRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

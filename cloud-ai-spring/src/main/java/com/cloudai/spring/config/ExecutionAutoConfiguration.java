@@ -1,8 +1,8 @@
 package com.cloudai.spring.config;
 
-import com.cloudai.execution.impl.ToolExecutionService;
-import com.cloudai.execution.spi.ToolRegistry;
-import com.cloudai.security.impl.SecurityInterceptor;
+import com.cloudai.execution.ToolExecutionService;
+import com.cloudai.execution.registry.ToolRegistry;
+import com.cloudai.security.SecurityInterceptor;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

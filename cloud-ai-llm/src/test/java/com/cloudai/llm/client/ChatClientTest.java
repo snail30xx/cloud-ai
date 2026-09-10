@@ -1,6 +1,15 @@
 package com.cloudai.llm.client;
 
-import com.cloudai.core.model.*;
+import com.cloudai.core.chat.ChatModel;
+import com.cloudai.core.chat.ModelDiscovery;
+
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.ModelOptions;
+import com.cloudai.core.chat.TokenUsage;
+import com.cloudai.core.tool.ToolCall;
 import com.cloudai.llm.ModelRouter;
 import com.cloudai.llm.advisor.Advisor;
 import com.cloudai.llm.client.support.ModelRouterAccessor;
@@ -249,7 +258,7 @@ class ChatClientTest {
 
     // ==================== Stub ====================
 
-    private static class StubChatModel implements com.cloudai.core.spi.ChatModel, com.cloudai.core.spi.ModelDiscovery {
+    private static class StubChatModel implements com.cloudai.core.chat.ChatModel, com.cloudai.core.chat.ModelDiscovery {
         private final ModelInfo info;
         private final String content;
 
@@ -264,7 +273,7 @@ class ChatClientTest {
         @Override public List<ModelInfo> listModels() { return List.of(info); }
     }
 
-    private static class StubStreamingChatModel implements com.cloudai.core.spi.ChatModel, com.cloudai.core.spi.ModelDiscovery {
+    private static class StubStreamingChatModel implements com.cloudai.core.chat.ChatModel, com.cloudai.core.chat.ModelDiscovery {
         private final ModelInfo info;
         private final Flux<String> contents;
 

@@ -1,13 +1,13 @@
 package com.cloudai.execution.config;
 
-import com.cloudai.core.model.ToolDefinition;
-import com.cloudai.execution.impl.DefaultToolRegistry;
-import com.cloudai.execution.impl.FileReadExecutor;
-import com.cloudai.execution.impl.FileWriteExecutor;
-import com.cloudai.execution.impl.ShellToolExecutor;
-import com.cloudai.execution.impl.ToolExecutionService;
-import com.cloudai.execution.spi.ToolRegistry;
-import com.cloudai.security.impl.SecurityInterceptor;
+import com.cloudai.core.tool.ToolDefinition;
+import com.cloudai.execution.registry.DefaultToolRegistry;
+import com.cloudai.execution.builtin.FileReadExecutor;
+import com.cloudai.execution.builtin.FileWriteExecutor;
+import com.cloudai.execution.builtin.ShellToolExecutor;
+import com.cloudai.execution.ToolExecutionService;
+import com.cloudai.execution.registry.ToolRegistry;
+import com.cloudai.security.SecurityInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

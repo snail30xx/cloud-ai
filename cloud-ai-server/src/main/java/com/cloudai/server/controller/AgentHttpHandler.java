@@ -6,7 +6,7 @@ import com.cloudai.llm.exception.LlmException;
 import com.cloudai.llm.exception.LlmRateLimitException;
 import com.cloudai.llm.exception.LlmServerException;
 import com.cloudai.llm.exception.LlmTimeoutException;
-import com.cloudai.runtime.model.AgentResponse;
+import com.cloudai.runtime.AgentResponse;
 import com.cloudai.server.dto.AgentRunRequest;
 import com.cloudai.server.dto.AgentRunResponse;
 import com.cloudai.server.service.AgentService;

@@ -1,8 +1,8 @@
 package com.cloudai.spring.config;
 
 import com.cloudai.persona.config.PersonaProperties;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

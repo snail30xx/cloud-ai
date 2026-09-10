@@ -1,7 +1,7 @@
 package com.cloudai.spring.config;
 
 import com.cloudai.context.config.ContextProperties;
-import com.cloudai.context.spi.ContextProvider;
+import com.cloudai.context.ContextProvider;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

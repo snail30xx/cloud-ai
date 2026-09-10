@@ -1,10 +1,10 @@
 package com.cloudai.llm.client.support;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.Message;
-import com.cloudai.core.model.ModelOptions;
-import com.cloudai.core.model.ToolDefinition;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.ModelOptions;
+import com.cloudai.core.tool.ToolDefinition;
 import com.cloudai.llm.advisor.Advisor;
 import com.cloudai.llm.client.spec.CallResponseSpec;
 import com.cloudai.llm.client.spec.ChatClientRequestSpec;

@@ -1,6 +1,6 @@
 package com.cloudai.spring.controller;
 
-import com.cloudai.runtime.model.AgentResponse;
+import com.cloudai.runtime.AgentResponse;
 import com.cloudai.server.dto.AgentRunRequest;
 import com.cloudai.server.dto.AgentRunResponse;
 import com.cloudai.server.service.AgentService;

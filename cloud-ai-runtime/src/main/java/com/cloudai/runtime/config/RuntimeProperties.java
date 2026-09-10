@@ -1,6 +1,6 @@
 package com.cloudai.runtime.config;
 
-import com.cloudai.runtime.model.AgentType;
+import com.cloudai.runtime.AgentType;
 
 import java.time.Duration;
 

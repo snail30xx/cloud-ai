@@ -1,8 +1,8 @@
 package com.cloudai.context.config;
 
-import com.cloudai.context.impl.DefaultEnvironmentProvider;
-import com.cloudai.context.impl.FilesystemProjectContextProvider;
-import com.cloudai.context.spi.ContextProvider;
+import com.cloudai.context.DefaultEnvironmentProvider;
+import com.cloudai.context.FilesystemProjectContextProvider;
+import com.cloudai.context.ContextProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ public final class ContextAutoConfiguration {
 
     public static ContextProvider projectContextProvider(ContextProperties props) {
         if (!props.isProjectContextEnabled()) {
-            return () -> com.cloudai.context.impl.PromptSectionImpl.empty("ProjectContext");
+            return () -> com.cloudai.core.prompt.SimplePromptSection.empty("ProjectContext");
         }
         log.info("Creating FilesystemProjectContextProvider: workDir={}", props.getWorkDir());
         return new FilesystemProjectContextProvider(props.getWorkDir());

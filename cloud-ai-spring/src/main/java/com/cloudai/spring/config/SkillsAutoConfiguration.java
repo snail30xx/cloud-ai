@@ -1,7 +1,7 @@
 package com.cloudai.spring.config;
 
 import com.cloudai.skills.config.SkillProperties;
-import com.cloudai.skills.spi.SkillRegistry;
+import com.cloudai.skills.SkillRegistry;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

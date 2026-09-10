@@ -1,12 +1,12 @@
 package com.cloudai.memory.config;
 
 import com.cloudai.memory.advisor.MemoryAdvisor;
-import com.cloudai.memory.impl.InMemoryMemoryStore;
-import com.cloudai.memory.impl.KeywordMemoryRetriever;
-import com.cloudai.memory.impl.SimpleContextManager;
-import com.cloudai.memory.spi.ContextManager;
-import com.cloudai.memory.spi.MemoryRetriever;
-import com.cloudai.memory.spi.MemoryStore;
+import com.cloudai.memory.InMemoryMemoryStore;
+import com.cloudai.memory.KeywordMemoryRetriever;
+import com.cloudai.memory.SimpleContextManager;
+import com.cloudai.memory.ContextManager;
+import com.cloudai.memory.MemoryRetriever;
+import com.cloudai.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

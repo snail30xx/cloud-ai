@@ -1,6 +1,6 @@
 package com.cloudai.llm.client.spec;
 
-import com.cloudai.core.model.ChatResponse;
+import com.cloudai.core.chat.ChatResponse;
 import org.jspecify.annotations.Nullable;
 
 /**

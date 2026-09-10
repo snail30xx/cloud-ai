@@ -1,15 +1,15 @@
 package com.cloudai.llm.adapter;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.FinishReason;
-import com.cloudai.core.model.Message;
-import com.cloudai.core.model.ModelInfo;
-import com.cloudai.core.model.ModelOptions;
-import com.cloudai.core.model.TokenUsage;
-import com.cloudai.core.model.ToolCall;
-import com.cloudai.core.spi.ChatModel;
-import com.cloudai.core.spi.ModelDiscovery;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.ModelOptions;
+import com.cloudai.core.chat.TokenUsage;
+import com.cloudai.core.tool.ToolCall;
+import com.cloudai.core.chat.ChatModel;
+import com.cloudai.core.chat.ModelDiscovery;
 import com.cloudai.llm.config.ProviderProperties;
 import com.cloudai.llm.exception.LlmAuthException;
 import com.cloudai.llm.exception.LlmClientException;

@@ -1,10 +1,10 @@
 package com.cloudai.llm.adapter;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.FinishReason;
-import com.cloudai.core.model.ModelInfo;
-import com.cloudai.core.model.TokenUsage;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.TokenUsage;
 import com.cloudai.llm.config.ProviderProperties;
 import com.cloudai.llm.observation.ChatModelObservationContext;
 import com.fasterxml.jackson.annotation.JsonProperty;

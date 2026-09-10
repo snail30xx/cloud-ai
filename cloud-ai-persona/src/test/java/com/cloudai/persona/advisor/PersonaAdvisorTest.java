@@ -1,11 +1,11 @@
 package com.cloudai.persona.advisor;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.Message;
-import com.cloudai.persona.impl.DefaultPersonaAssembler;
-import com.cloudai.persona.model.Persona;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.Message;
+import com.cloudai.persona.DefaultPersonaAssembler;
+import com.cloudai.persona.Persona;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

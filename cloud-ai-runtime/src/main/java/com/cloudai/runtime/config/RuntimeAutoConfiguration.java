@@ -1,11 +1,11 @@
 package com.cloudai.runtime.config;
 
-import com.cloudai.execution.impl.ToolExecutionService;
-import com.cloudai.execution.spi.ToolRegistry;
+import com.cloudai.execution.ToolExecutionService;
+import com.cloudai.execution.registry.ToolRegistry;
 import com.cloudai.llm.ModelRouter;
 import com.cloudai.runtime.AgentLoopFactory;
-import com.cloudai.runtime.spi.AgentLoop;
-import com.cloudai.runtime.spi.StopCondition;
+import com.cloudai.runtime.AgentLoop;
+import com.cloudai.runtime.StopCondition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

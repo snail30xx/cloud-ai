@@ -1,9 +1,9 @@
 package com.cloudai.spring.config;
 
 import com.cloudai.memory.config.MemoryProperties;
-import com.cloudai.memory.spi.ContextManager;
-import com.cloudai.memory.spi.MemoryRetriever;
-import com.cloudai.memory.spi.MemoryStore;
+import com.cloudai.memory.ContextManager;
+import com.cloudai.memory.MemoryRetriever;
+import com.cloudai.memory.MemoryStore;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

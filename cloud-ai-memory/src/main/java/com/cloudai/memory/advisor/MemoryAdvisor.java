@@ -1,11 +1,11 @@
 package com.cloudai.memory.advisor;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.Message;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.Message;
 import com.cloudai.llm.advisor.Advisor;
-import com.cloudai.memory.model.MemoryEntry;
-import com.cloudai.memory.model.MemoryQuery;
-import com.cloudai.memory.spi.MemoryRetriever;
+import com.cloudai.memory.MemoryEntry;
+import com.cloudai.memory.MemoryQuery;
+import com.cloudai.memory.MemoryRetriever;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * 将记忆以 system 消息形式注入到消息列表头部。</p>
  *
  * <p>仅做检索（读），不做存储（写）。
- * 记忆的写入由调用方在会话结束后通过 {@link com.cloudai.memory.spi.MemoryStore} 完成。</p>
+ * 记忆的写入由调用方在会话结束后通过 {@link com.cloudai.memory.MemoryStore} 完成。</p>
  *
  * @author cloud-ai
  * @since 1.0

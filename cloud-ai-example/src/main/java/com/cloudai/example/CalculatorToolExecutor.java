@@ -1,8 +1,8 @@
 package com.cloudai.example;
 
-import com.cloudai.core.model.ToolCall;
-import com.cloudai.execution.model.ToolResult;
-import com.cloudai.execution.spi.ToolExecutor;
+import com.cloudai.core.tool.ToolCall;
+import com.cloudai.execution.ToolResult;
+import com.cloudai.execution.ToolExecutor;
 
 /**
  * 计算器工具 — 评估简单算术表达式（加、减、乘、除）。

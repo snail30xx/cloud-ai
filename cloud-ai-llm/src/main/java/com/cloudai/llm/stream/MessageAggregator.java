@@ -1,9 +1,9 @@
 package com.cloudai.llm.stream;
 
-import com.cloudai.core.model.ChatResponse;
-import com.cloudai.core.model.FinishReason;
-import com.cloudai.core.model.TokenUsage;
-import com.cloudai.core.model.ToolCall;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.TokenUsage;
+import com.cloudai.core.tool.ToolCall;
 import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

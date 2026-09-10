@@ -1,6 +1,6 @@
 package com.cloudai.security.config;
 
-import com.cloudai.security.model.OperationType;
+import com.cloudai.security.permission.OperationType;
 
 import java.time.Duration;
 import java.util.List;

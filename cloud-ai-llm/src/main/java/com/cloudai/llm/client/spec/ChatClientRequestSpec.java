@@ -1,8 +1,8 @@
 package com.cloudai.llm.client.spec;
 
-import com.cloudai.core.model.Message;
-import com.cloudai.core.model.ModelOptions;
-import com.cloudai.core.model.ToolDefinition;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.ModelOptions;
+import com.cloudai.core.tool.ToolDefinition;
 import com.cloudai.llm.advisor.Advisor;
 import org.jspecify.annotations.Nullable;
 

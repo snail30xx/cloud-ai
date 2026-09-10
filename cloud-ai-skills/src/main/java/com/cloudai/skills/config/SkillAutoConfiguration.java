@@ -1,10 +1,10 @@
 package com.cloudai.skills.config;
 
-import com.cloudai.skills.impl.FilesystemSkillRegistry;
-import com.cloudai.skills.impl.LoadSkillExecutor;
-import com.cloudai.skills.impl.SkillMenuPromptSection;
-import com.cloudai.skills.spi.SkillLoader;
-import com.cloudai.skills.spi.SkillRegistry;
+import com.cloudai.skills.FilesystemSkillRegistry;
+import com.cloudai.skills.LoadSkillExecutor;
+import com.cloudai.skills.SkillMenuPromptSection;
+import com.cloudai.skills.SkillLoader;
+import com.cloudai.skills.SkillRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

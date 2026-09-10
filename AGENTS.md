@@ -2,13 +2,14 @@
 
 ## 项目事实
 
-- 当前仓库是 Maven 多模块 Java 项目：`com.cloudai:cloud-ai`，`packaging=pom`，共 11 个子模块。
-- 模块列表：`cloud-ai-core`、`cloud-ai-llm`、`cloud-ai-memory`、`cloud-ai-persona`、`cloud-ai-context`、`cloud-ai-skills`、`cloud-ai-security`、`cloud-ai-execution`、`cloud-ai-runtime`、`cloud-ai-server`、`cloud-ai-example`。
-- JDK 21、Spring Boot 4.1.0、JUnit 5.11.4、Mockito 5.12.0；POM 已声明编译级别 `<source>21</source>`。
-- 每个子模块的 Java 包根路径为 `com.cloudai.{module}`，统一使用 `spi` / `impl` / `model` / `config` 四层子包。
+- 当前仓库是 Maven 多模块 Java 项目：`com.cloudai:cloud-ai`，`packaging=pom`，共 12 个子模块。
+- 框架模块（10 个）：`cloud-ai-core`（共享词汇表）、`cloud-ai-llm`、`cloud-ai-memory`、`cloud-ai-persona`、`cloud-ai-context`、`cloud-ai-skills`、`cloud-ai-security`、`cloud-ai-execution`、`cloud-ai-runtime`、`cloud-ai-server`。
+- 聚合/示例模块（2 个）：`cloud-ai-spring`（可选的 Spring Boot 自动装配集成层）、`cloud-ai-example`（端到端示例）。
+- JDK 21、JUnit 5.11.4、Mockito 5.12.0；POM 已声明编译级别 `<source>21</source>`。
+- 每个子模块的 Java 包根路径为 `com.cloudai.{module}`，模块内按领域分包（规则见「Java 代码」节）；不使用 `spi` / `impl` / `model` 技术分层目录。
 - `pom.xml` 是 Java 版本、依赖、插件和测试框架的唯一事实来源。不要把计划中的技术栈写成已实现能力。
 - 项目的根包是 `com.cloudai`（不是 `com.vcredit`）；`com.vcredit` 仅用于 `.agents/skills/` 下的 Skill 包路径。
-- 当前项目已引入 Spring Boot 4.1.0（`spring-boot-dependencies` BOM）、Spring Retry 2.0.7、Jackson、Micrometer Observation、Reactor；尚未引入数据库、消息队列或容器化部署。
+- 框架模块是纯 JDK 实现：`java.net.http.HttpClient`（外部调用）、Jackson、Reactor、Micrometer Observation、SLF4J/Logback；不依赖 Spring，配置装配通过 `config` 包中的纯静态工厂方法完成。Spring Boot 4.1.0（`spring-boot-dependencies` BOM）仅引入于 `cloud-ai-spring` 集成模块。尚未引入数据库、消息队列或容器化部署。
 - Spring Boot 4.1.0 管理 JUnit 6.x Platform，但项目通过在 BOM 中前置 `junit-bom 5.11.4` 锁定 JUnit 5.11.4，以兼容 IntelliJ IDEA 2024.3 Runner。
 
 ## 开始工作前
@@ -22,24 +23,30 @@
 ## Java 代码
 
 - 包名使用全小写，遵循现有根包 `com.cloudai`；类、方法、字段和常量分别使用 Java 惯用命名。
-- 每个模块统一使用四层子包：`spi`（接口/抽象）、`impl`（默认实现）、`model`（数据对象/枚举）、`config`（自动配置/Properties）。
+- **按领域分包，不按技术角色分包**（参照 JDK / Spring AI / LangChain4j 惯例：包名回答"这段代码关于什么"）：
+  - 接口与其默认实现**同包共置**（如 `SecurityInterceptor` 与其依赖的 `PermissionManager` 同域；`InMemoryMemoryStore` 与 `MemoryStore` 同包），禁止新建 `spi/`、`impl/`、`model/` 目录表达"接口/实现/数据"分层。
+  - 单领域小模块直接使用模块根包（如 `com.cloudai.memory`、`com.cloudai.persona`、`com.cloudai.context`、`com.cloudai.skills`）；多领域模块按领域建子包（如 `security.permission` / `security.approval` / `security.audit`、`execution.registry` / `execution.builtin`、`runtime.loop` / `runtime.lifecycle`、`core.chat` / `core.prompt` / `core.tool`）。
+  - `config` 子包是唯一固定的技术子包：`XxxProperties`（配置 record）+ `XxxAutoConfiguration`（纯静态工厂方法，模块无 Spring 依赖）。
+  - 通用模式包名保留：`advisor`（提示词注入扩展点）、`annotation`（框架注解）、`lifecycle`（生命周期回调）、`exception`（模块异常体系）、`observation`（观测）。
+  - 门面/工厂/构建器类可位于模块根包（如 `llm.ModelRouter`、`runtime.AgentLoopFactory`、`runtime.AgentLoopBuilder`）。
+  - 跨模块共享词汇表集中在 `cloud-ai-core`，同样按领域分包（`core.chat`、`core.prompt`、`core.tool`）。
+- 扩展点用领域包内的接口 + Javadoc 表达（注明实现方契约），不靠目录位置标识；默认实现以 `Default` 前缀命名，内存实现以 `InMemory` 前缀命名；厂商/策略实现以厂商名前缀命名（如 `OpenAiLlmAdapter`）并集中在 `llm.adapter` 包。
 - 遵循现有代码格式；不使用通配符 import，覆写方法标注 `@Override`，条件和循环即使只有一条语句也使用大括号。
 - 优先使用清晰、不可变的数据类型和构造器；不要为单一实现预先创建接口、抽象层或万能工具类。
 - 注释说明原因和约束，不重复代码本身；公共 API、复杂算法和非显然行为应补充简洁 Javadoc；所有类必须包含 `@author cloud-ai` 和 `@since 1.0`。
 - 异常必须被处理或继续抛出，不静默吞异常、不用 `null` 掩盖失败、不输出敏感信息。
-- 项目已引入 Spring Boot 4.1.0；构造器注入、`@Configuration` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean` 自动配置模式、`@EnableConfigurationProperties` 类型安全配置绑定均可使用。
-- 外部 HTTP 调用使用 `RestClient`（非 `RestTemplate`）；流式响应使用 Reactor `Flux`；观测使用 Micrometer Observation API。
-- 异常体系遵循已有模式：模块级基类继承 `RuntimeException`（如 `LlmException`），再派生子类（如 `LlmAuthException`、`LlmServerException`），区分可重试与不可重试。
-- SPI 接口放 `spi/` 包，默认实现放 `impl/` 包并以 `Default` 或 `InMemory` 前缀命名；厂商/策略实现以厂商名前缀命名（如 `OpenAiLlmAdapter`）。
-- 模板方法模式用于框架骨架（如 `AgentLoopTemplate`）：骨架方法标注 `final`，策略通过 SPI 接口注入。
+- Spring Boot 相关代码只出现在 `cloud-ai-spring` 模块：构造器注入、`@AutoConfiguration` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean` 自动配置模式、`@EnableConfigurationProperties` 类型安全配置绑定。框架模块的 `config.XxxAutoConfiguration` 是纯静态工厂类，不得添加 Spring 注解，也不得出现在 `AutoConfiguration.imports` 中（该文件只属于 `cloud-ai-spring`）。
+- 外部 HTTP 调用：框架模块使用 JDK `java.net.http.HttpClient`（非 `RestClient`/`RestTemplate`）；Web 表层仅在 `cloud-ai-spring`（Spring MVC）与 `cloud-ai-server`（JDK `HttpServer`）中存在；流式响应使用 Reactor `Flux`；观测使用 Micrometer Observation API。
+- 异常体系遵循已有模式：模块级基类继承 `RuntimeException`（如 `LlmException`），再派生子类（如 `LlmAuthException`、`LlmServerException`），区分可重试与不可重试，集中在模块的 `exception` 包。
+- 模板方法模式用于框架骨架（如 `runtime.loop.AgentLoopTemplate`）：骨架方法标注 `final`，策略通过接口注入。
 - 测试辅助方法使用 package-private 可见性，以 `xxxForTest` 后缀命名（如 `parseFinishReasonForTest`），不暴露为 public API。
 
 ## 测试、构建与验证
 
 - 行为变更必须增加或更新最接近该行为的测试，至少覆盖成功路径和关键失败、边界路径。
-- 常用命令：`mvn test -pl cloud-ai-core,cloud-ai-llm`（只跑指定模块）；全量构建 `mvn test`（跑所有 11 个模块）。只报告实际执行过的命令和结果。
+- 常用命令：`mvn test -pl cloud-ai-core,cloud-ai-llm`（只跑指定模块）；全量构建 `mvn test`（跑所有 12 个模块）。只报告实际执行过的命令和结果。
 - POM 已声明 Java 编译级别 21；若命令因本机 JDK 版本不匹配失败，说明 JDK 版本而非代码问题。
-- Spring Boot 4.1.0 已引入，可使用 `@SpringBootTest` 启动上下文，但纯逻辑测试优先用纯 JUnit 5 + Mock。
+- `@SpringBootTest` 等上下文测试只适用于 `cloud-ai-spring`；其余模块用纯 JUnit 5 + Mock。
 
 ### 测试规范
 

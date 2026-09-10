@@ -1,6 +1,6 @@
 package com.cloudai.llm.client.support;
 
-import com.cloudai.core.model.ChatResponse;
+import com.cloudai.core.chat.ChatResponse;
 import com.cloudai.llm.client.spec.StreamResponseSpec;
 import com.cloudai.llm.stream.MessageAggregator;
 import reactor.core.publisher.Flux;

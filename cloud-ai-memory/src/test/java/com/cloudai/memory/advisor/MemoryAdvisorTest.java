@@ -1,13 +1,13 @@
 package com.cloudai.memory.advisor;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.Message;
-import com.cloudai.memory.impl.InMemoryMemoryStore;
-import com.cloudai.memory.impl.KeywordMemoryRetriever;
-import com.cloudai.memory.model.MemoryEntry;
-import com.cloudai.memory.model.MemoryType;
-import com.cloudai.memory.spi.MemoryRetriever;
-import com.cloudai.memory.spi.MemoryStore;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.Message;
+import com.cloudai.memory.InMemoryMemoryStore;
+import com.cloudai.memory.KeywordMemoryRetriever;
+import com.cloudai.memory.MemoryEntry;
+import com.cloudai.memory.MemoryType;
+import com.cloudai.memory.MemoryRetriever;
+import com.cloudai.memory.MemoryStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

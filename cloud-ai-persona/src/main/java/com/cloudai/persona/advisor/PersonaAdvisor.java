@@ -1,12 +1,12 @@
 package com.cloudai.persona.advisor;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.Message;
-import com.cloudai.core.model.ToolDefinition;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.tool.ToolDefinition;
 import com.cloudai.llm.advisor.Advisor;
-import com.cloudai.persona.model.Persona;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
+import com.cloudai.persona.Persona;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,11 +1,11 @@
 package com.cloudai.spring.config;
 
-import com.cloudai.execution.spi.ToolRegistry;
-import com.cloudai.memory.spi.MemoryRetriever;
-import com.cloudai.memory.spi.MemoryStore;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
-import com.cloudai.runtime.spi.AgentLoop;
+import com.cloudai.execution.registry.ToolRegistry;
+import com.cloudai.memory.MemoryRetriever;
+import com.cloudai.memory.MemoryStore;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
+import com.cloudai.runtime.AgentLoop;
 import com.cloudai.server.service.AgentService;
 import com.cloudai.spring.interceptor.ApiKeyInterceptor;
 import com.cloudai.spring.properties.CloudAiProperties;

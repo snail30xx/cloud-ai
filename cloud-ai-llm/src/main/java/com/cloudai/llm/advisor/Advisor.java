@@ -1,6 +1,6 @@
 package com.cloudai.llm.advisor;
 
-import com.cloudai.core.model.ChatRequest;
+import com.cloudai.core.chat.ChatRequest;
 
 /**
  * Advisor — 请求拦截器接口。

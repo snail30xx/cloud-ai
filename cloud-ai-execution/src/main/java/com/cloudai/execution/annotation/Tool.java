@@ -8,9 +8,9 @@ import java.lang.annotation.Target;
 /**
  * 工具注解 — 标注在方法上，声明该方法为一个可被 LLM 调用的工具。
  *
- * <p>配合 {@link com.cloudai.execution.impl.DefaultToolRegistry#register(Object)} 使用：
+ * <p>配合 {@link com.cloudai.execution.registry.DefaultToolRegistry#register(Object)} 使用：
  * 注册表会扫描标注了 {@code @Tool} 的方法，自动生成
- * {@link com.cloudai.core.model.ToolDefinition} 和反射执行器。</p>
+ * {@link com.cloudai.core.tool.ToolDefinition} 和反射执行器。</p>
  *
  * <pre>{@code
  * class MyTools {

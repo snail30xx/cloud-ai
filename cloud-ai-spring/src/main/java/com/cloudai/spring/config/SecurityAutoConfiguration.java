@@ -1,10 +1,10 @@
 package com.cloudai.spring.config;
 
-import com.cloudai.security.model.OperationType;
-import com.cloudai.security.spi.ApprovalGateway;
-import com.cloudai.security.spi.AuditLogger;
-import com.cloudai.security.spi.PermissionManager;
-import com.cloudai.security.impl.SecurityInterceptor;
+import com.cloudai.security.permission.OperationType;
+import com.cloudai.security.approval.ApprovalGateway;
+import com.cloudai.security.audit.AuditLogger;
+import com.cloudai.security.permission.PermissionManager;
+import com.cloudai.security.SecurityInterceptor;
 import com.cloudai.spring.properties.CloudAiProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

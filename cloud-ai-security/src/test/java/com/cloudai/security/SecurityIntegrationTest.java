@@ -1,15 +1,15 @@
 package com.cloudai.security;
 
-import com.cloudai.core.model.ToolCall;
-import com.cloudai.security.impl.DefaultPermissionManager;
-import com.cloudai.security.impl.InMemoryApprovalGateway;
-import com.cloudai.security.model.ApprovalRequest;
-import com.cloudai.security.model.ApprovalResponse;
-import com.cloudai.security.model.AuditEvent;
-import com.cloudai.security.model.OperationType;
-import com.cloudai.security.model.RiskLevel;
-import com.cloudai.security.model.SecurityContext;
-import com.cloudai.security.spi.AuditLogger;
+import com.cloudai.core.tool.ToolCall;
+import com.cloudai.security.permission.DefaultPermissionManager;
+import com.cloudai.security.approval.InMemoryApprovalGateway;
+import com.cloudai.security.approval.ApprovalRequest;
+import com.cloudai.security.approval.ApprovalResponse;
+import com.cloudai.security.audit.AuditEvent;
+import com.cloudai.security.permission.OperationType;
+import com.cloudai.security.RiskLevel;
+import com.cloudai.security.SecurityContext;
+import com.cloudai.security.audit.AuditLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,10 +1,10 @@
 package com.cloudai.persona.config;
 
 import com.cloudai.persona.advisor.PersonaAdvisor;
-import com.cloudai.persona.impl.DefaultPersonaAssembler;
-import com.cloudai.persona.impl.DefaultPersonaProvider;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
+import com.cloudai.persona.DefaultPersonaAssembler;
+import com.cloudai.persona.DefaultPersonaProvider;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

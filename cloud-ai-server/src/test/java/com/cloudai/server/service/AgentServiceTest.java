@@ -1,16 +1,16 @@
 package com.cloudai.server.service;
 
-import com.cloudai.execution.spi.ToolRegistry;
-import com.cloudai.memory.model.MemoryEntry;
-import com.cloudai.memory.model.MemoryType;
-import com.cloudai.memory.spi.MemoryRetriever;
-import com.cloudai.memory.spi.MemoryStore;
-import com.cloudai.persona.model.Persona;
-import com.cloudai.persona.spi.PersonaAssembler;
-import com.cloudai.persona.spi.PersonaProvider;
-import com.cloudai.runtime.model.AgentRequest;
-import com.cloudai.runtime.model.AgentResponse;
-import com.cloudai.runtime.spi.AgentLoop;
+import com.cloudai.execution.registry.ToolRegistry;
+import com.cloudai.memory.MemoryEntry;
+import com.cloudai.memory.MemoryType;
+import com.cloudai.memory.MemoryRetriever;
+import com.cloudai.memory.MemoryStore;
+import com.cloudai.persona.Persona;
+import com.cloudai.persona.PersonaAssembler;
+import com.cloudai.persona.PersonaProvider;
+import com.cloudai.runtime.AgentRequest;
+import com.cloudai.runtime.AgentResponse;
+import com.cloudai.runtime.AgentLoop;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

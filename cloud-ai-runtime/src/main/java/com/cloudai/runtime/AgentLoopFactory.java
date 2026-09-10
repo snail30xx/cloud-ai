@@ -1,13 +1,13 @@
 package com.cloudai.runtime;
 
-import com.cloudai.execution.impl.ToolExecutionService;
-import com.cloudai.execution.spi.ToolRegistry;
+import com.cloudai.execution.ToolExecutionService;
+import com.cloudai.execution.registry.ToolRegistry;
 import com.cloudai.llm.ModelRouter;
-import com.cloudai.runtime.impl.PlanThenExecuteAgentLoop;
-import com.cloudai.runtime.impl.ReActAgentLoop;
-import com.cloudai.runtime.model.AgentType;
-import com.cloudai.runtime.spi.AgentLoop;
-import com.cloudai.runtime.spi.StopCondition;
+import com.cloudai.runtime.loop.PlanThenExecuteAgentLoop;
+import com.cloudai.runtime.loop.ReActAgentLoop;
+import com.cloudai.runtime.AgentType;
+import com.cloudai.runtime.AgentLoop;
+import com.cloudai.runtime.StopCondition;
 
 import java.time.Duration;
 import java.util.List;

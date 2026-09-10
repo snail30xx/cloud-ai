@@ -1,6 +1,6 @@
 package com.cloudai.llm.config;
 
-import com.cloudai.core.spi.ChatModel;
+import com.cloudai.core.chat.ChatModel;
 import com.cloudai.llm.ModelRouter;
 import com.cloudai.llm.adapter.DeepSeekLlmAdapter;
 import com.cloudai.llm.adapter.OpenAiLlmAdapter;

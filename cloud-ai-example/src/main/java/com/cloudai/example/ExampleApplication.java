@@ -1,7 +1,7 @@
 package com.cloudai.example;
 
-import com.cloudai.memory.model.MemoryType;
-import com.cloudai.runtime.model.AgentResponse;
+import com.cloudai.memory.MemoryType;
+import com.cloudai.runtime.AgentResponse;
 import com.cloudai.server.facade.CloudAi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

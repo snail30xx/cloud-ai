@@ -1,6 +1,12 @@
 package com.cloudai.llm.adapter;
 
-import com.cloudai.core.model.*;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.ModelOptions;
+import com.cloudai.core.tool.ToolCall;
+import com.cloudai.core.tool.ToolDefinition;
 import com.cloudai.llm.config.ProviderProperties;
 import com.cloudai.llm.model.OpenAiChatResponse;
 import com.cloudai.llm.model.OpenAiChoice;

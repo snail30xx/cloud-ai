@@ -1,7 +1,7 @@
 package com.cloudai.llm.observation;
 
-import com.cloudai.core.model.ChatRequest;
-import com.cloudai.core.model.ChatResponse;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
 import io.micrometer.observation.Observation;
 import org.jspecify.annotations.Nullable;
 

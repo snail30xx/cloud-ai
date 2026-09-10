@@ -1,6 +1,10 @@
 package com.cloudai.llm.adapter;
 
-import com.cloudai.core.model.*;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.Message;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.ModelOptions;
 import com.cloudai.llm.config.ProviderProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

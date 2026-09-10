@@ -1,6 +1,6 @@
 package com.cloudai.llm.client;
 
-import com.cloudai.core.model.ChatRequest;
+import com.cloudai.core.chat.ChatRequest;
 import com.cloudai.llm.advisor.Advisor;
 import com.cloudai.llm.client.spec.ChatClientRequestSpec;
 import com.cloudai.llm.client.support.DefaultChatClientRequestSpec;

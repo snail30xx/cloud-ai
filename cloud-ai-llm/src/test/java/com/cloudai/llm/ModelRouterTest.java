@@ -1,8 +1,12 @@
 package com.cloudai.llm;
 
-import com.cloudai.core.model.*;
-import com.cloudai.core.spi.ChatModel;
-import com.cloudai.core.spi.ModelDiscovery;
+import com.cloudai.core.chat.ChatRequest;
+import com.cloudai.core.chat.ChatResponse;
+import com.cloudai.core.chat.FinishReason;
+import com.cloudai.core.chat.ModelInfo;
+import com.cloudai.core.chat.TokenUsage;
+import com.cloudai.core.chat.ChatModel;
+import com.cloudai.core.chat.ModelDiscovery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
